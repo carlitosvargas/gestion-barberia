@@ -1,0 +1,71 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Rol {
+  SUPER_ADMIN
+  DUENO_EMPRESA
+}
+
+model Empresa {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  logo          String?
+  direccion     String?
+  telefono      String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  usuarios      Usuario[]
+  servicios     Servicio[]
+  turnos        Turno[]
+}
+
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  rol           Rol      @default(DUENO_EMPRESA)
+  empresaId     Int?
+  empresa       Empresa? @relation(fields: [empresaId], references: [id])
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  apellido  String
+  telefono  String
+  email     String?
+  turnos    Turno[]
+  creadoEn  DateTime @default(now())
+}
+
+model Servicio {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  precio      Float
+  duracion    Int      // en minutos
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  turnos      Turno[]
+  creadoEn    DateTime @default(now())
+}
+
+model Turno {
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  servicioId  Int
+  servicio    Servicio @relation(fields: [servicioId], references: [id])
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  fecha       DateTime
+  estado      String   @default("PENDIENTE") // PENDIENTE, CONFIRMADO, CANCELADO, COMPLETADO
+  creadoEn    DateTime @default(now())
+}
