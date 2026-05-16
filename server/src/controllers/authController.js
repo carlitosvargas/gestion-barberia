@@ -5,7 +5,6 @@ const { esquemaRegistro, esquemaLogin } = require('../utils/validaciones');
 
 const login = async (req, res) => {
   try {
-    // Validar datos de entrada
     const datosValidados = esquemaLogin.parse(req.body);
     const { email, password } = datosValidados;
 
@@ -33,8 +32,11 @@ const login = async (req, res) => {
       token,
       usuario: {
         id: usuario.id,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
         email: usuario.email,
         rol: usuario.rol,
+        empresaId: usuario.empresaId, // Campo explícito
         empresa: usuario.empresa
       }
     });
@@ -48,9 +50,8 @@ const login = async (req, res) => {
 
 const registro = async (req, res) => {
   try {
-    // Validar datos de entrada
     const datosValidados = esquemaRegistro.parse(req.body);
-    const { email, password, rol, empresaId } = datosValidados;
+    const { nombre, apellido, telefono, email, password, rol, empresaId } = datosValidados;
 
     const usuarioExistente = await prisma.usuario.findUnique({ where: { email } });
     if (usuarioExistente) {
@@ -61,6 +62,9 @@ const registro = async (req, res) => {
 
     const usuario = await prisma.usuario.create({
       data: {
+        nombre,
+        apellido,
+        telefono,
         email,
         password: passwordHasheada,
         rol: rol || 'DUENO_EMPRESA',
@@ -68,7 +72,10 @@ const registro = async (req, res) => {
       }
     });
 
-    res.status(201).json({ mensaje: 'Usuario creado con éxito', usuario: { id: usuario.id, email: usuario.email } });
+    res.status(201).json({ 
+      mensaje: 'Usuario creado con éxito', 
+      usuario: { id: usuario.id, email: usuario.email, nombre: usuario.nombre } 
+    });
   } catch (error) {
     if (error.name === 'ZodError') {
       return res.status(400).json({ mensaje: 'Error de validación', errores: error.errors });

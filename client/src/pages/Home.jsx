@@ -7,7 +7,7 @@ const Home = () => {
     <div className="home-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ textAlign: 'center', marginBottom: '4rem' }}>
         <h1 className="heading-gold" style={{ fontSize: '4rem', marginBottom: '1rem' }}>PLATAFORMA BARBER</h1>
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>La gestión definitiva para tu barbería de lujo</p>
+        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>La gestión definitiva para tu barbería</p>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
@@ -34,7 +34,7 @@ const Home = () => {
       </div>
 
       <footer style={{ marginTop: '6rem', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
-        <p>&copy; 2026 Barber Platform - Sistema Multi-Empresa</p>
+        <p>&copy; 2026 Barber Platform - Sistema Multi-Empresa - Desarrollado por Carlos Vargas.</p>
       </footer>
     </div>
   );

@@ -18,6 +18,8 @@ model Empresa {
   logo          String?
   direccion     String?
   telefono      String?
+  dias          String?   // Ej: "Lunes a Viernes"
+  horarios      String?   // Ej: "09:00 - 18:00"
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
   usuarios      Usuario[]
@@ -27,6 +29,9 @@ model Empresa {
 
 model Usuario {
   id            Int      @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  telefono      String?
   email         String   @unique
   password      String
   rol           Rol      @default(DUENO_EMPRESA)

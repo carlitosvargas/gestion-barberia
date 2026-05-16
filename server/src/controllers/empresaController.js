@@ -3,12 +3,11 @@ const { esquemaEmpresa } = require('../utils/validaciones');
 
 const crearEmpresa = async (req, res) => {
   try {
-    // Validar datos de entrada
     const datosValidados = esquemaEmpresa.parse(req.body);
-    const { nombre, direccion, telefono, logo } = datosValidados;
+    const { nombre, direccion, telefono, logo, dias, horarios } = datosValidados;
 
     const empresa = await prisma.empresa.create({
-      data: { nombre, direccion, telefono, logo }
+      data: { nombre, direccion, telefono, logo, dias, horarios }
     });
     res.status(201).json(empresa);
   } catch (error) {
@@ -32,7 +31,7 @@ const obtenerEmpresaPorId = async (req, res) => {
   const { id } = req.params;
   try {
     const empresa = await prisma.empresa.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: { servicios: true }
     });
     if (!empresa) return res.status(404).json({ mensaje: 'Empresa no encontrada' });
@@ -42,4 +41,18 @@ const obtenerEmpresaPorId = async (req, res) => {
   }
 };
 
-module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId };
+const actualizarEmpresa = async (req, res) => {
+  const { id } = req.params;
+  const { nombre, direccion, telefono, logo, dias, horarios } = req.body;
+  try {
+    const empresa = await prisma.empresa.update({
+      where: { id: parseInt(id) },
+      data: { nombre, direccion, telefono, logo, dias, horarios }
+    });
+    res.json(empresa);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al actualizar empresa', error: error.message });
+  }
+};
+
+module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, actualizarEmpresa };

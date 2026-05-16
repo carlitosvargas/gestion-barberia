@@ -3,14 +3,18 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'admin@barberia.com';
+  const email = 'carloscabj8@gmail.com';
   const password = 'admin123';
+  const nombre = 'Carlos';
+  const apellido = 'Vargas';
 
   const passwordHasheada = await bcrypt.hash(password, 10);
 
   try {
     const admin = await prisma.usuario.create({
       data: {
+        nombre,
+        apellido,
         email,
         password: passwordHasheada,
         rol: 'SUPER_ADMIN',
@@ -18,6 +22,7 @@ async function main() {
     });
     console.log('-----------------------------------------');
     console.log('✅ Super Admin creado con éxito');
+    console.log(`👤 Nombre: ${admin.nombre} ${admin.apellido}`);
     console.log(`📧 Email: ${admin.email}`);
     console.log(`🔑 Password: ${password}`);
     console.log('-----------------------------------------');
