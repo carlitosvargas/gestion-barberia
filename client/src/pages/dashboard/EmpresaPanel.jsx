@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import empresaService from '../../services/empresaService';
 import { DashboardLayout, NavItem, modalStyles } from '../../components/dashboard/DashboardLayout';
-import { Calendar, Scissors, Settings, Trash2, LayoutDashboard, Pencil, Save, Image as ImageIcon, Building2, Clock } from 'lucide-react';
+import {
+  Calendar, Scissors, Settings, Trash2, LayoutDashboard, Pencil, Save,
+  Image as ImageIcon, Building2, Clock, Upload, ChevronLeft, ChevronRight,
+  Plus, Check, X, User, Phone, CheckCircle
+} from 'lucide-react';
 import alerts from '../../utils/alerts';
+import { optimizarImagen } from '../../utils/imageOptimizer';
 
 const EmpresaPanel = ({ usuario, logout, navigate }) => {
   const [seccion, setSeccion] = useState('inicio');
@@ -24,6 +29,20 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [servicioEnEdicion, setServicioEnEdicion] = useState(null);
   const [nuevoServicio, setNuevoServicio] = useState({ nombre: '', precio: '', duracion: 30 });
+
+  // Gestión de Turnos (Calendario y Agenda)
+  const [turnos, setTurnos] = useState([]);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
+  const [mesActual, setMesActual] = useState(new Date());
+  const [mostrarModalTurnoManual, setMostrarModalTurnoManual] = useState(false);
+  const [nuevoTurnoManual, setNuevoTurnoManual] = useState({
+    clienteNombre: '',
+    clienteApellido: '',
+    clienteTelefono: '',
+    clienteEmail: '',
+    servicioId: '',
+    hora: '09:00'
+  });
 
   useEffect(() => {
     cargarDatos();
@@ -49,6 +68,14 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
         const data = await empresaService.obtenerServicios();
         setServicios(data);
       }
+      if (seccion === 'turnos') {
+        const dataServicios = await empresaService.obtenerServicios();
+        setServicios(dataServicios);
+        if (usuario.empresaId) {
+          const dataTurnos = await empresaService.obtenerTurnos(usuario.empresaId);
+          setTurnos(dataTurnos);
+        }
+      }
       if (usuario.empresaId) {
         const data = await empresaService.obtenerMiEmpresa(usuario.empresaId);
         setMiEmpresa(data);
@@ -58,12 +85,40 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
 
   const handleUpdateEmpresa = async (e) => {
     e.preventDefault();
+
+    // Validar el formato de horarios en el frontend
+    if (formEmpresa.horarios && formEmpresa.horarios.trim() !== '') {
+      const matches = formEmpresa.horarios.match(/\b\d{2}:\d{2}\b/g);
+      if (!matches || matches.length < 2 || matches.length % 2 !== 0) {
+        return alerts.error(
+          'Formato de Horarios Inválido',
+          "Debes ingresar parejas de inicio y fin válidas en formato HH:MM. Ej: '09:00 a 13:00' o '09:00 a 13:00, 16:00 a 20:00'"
+        );
+      }
+    }
+
     try {
       await empresaService.actualizarMiEmpresa(miEmpresa.id, formEmpresa);
       alerts.success('¡Actualizado!', 'Los datos de tu empresa han sido guardados.');
       cargarDatos();
     } catch (err) {
-      alerts.error('Error', 'No se pudieron guardar los cambios.');
+      alerts.error('Error', err.response?.data?.mensaje || 'No se pudieron guardar los cambios.');
+    }
+  };
+
+  const handleSubirLogoLocal = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      alerts.toast('Optimizando y subiendo imagen...', 'info');
+      const blobOptimizado = await optimizarImagen(file, 250, 250);
+      const res = await empresaService.subirImagen(blobOptimizado);
+      setFormEmpresa(prev => ({ ...prev, logo: res.url }));
+      alerts.success('¡Logo cargado!', 'El logo local ha sido cargado correctamente.');
+    } catch (err) {
+      console.error(err);
+      alerts.error('Error', err.response?.data?.mensaje || 'No se pudo subir la imagen.');
     }
   };
 
@@ -111,6 +166,156 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     setMostrarModalEditar(true);
   };
 
+  // --- LÓGICA DE TURNOS ---
+
+  const handleCambiarEstadoTurno = async (turnoId, nuevoEstado) => {
+    try {
+      await empresaService.actualizarEstadoTurno(turnoId, nuevoEstado);
+      alerts.toast(`Turno ${nuevoEstado.toLowerCase()} con éxito`, 'success');
+      cargarDatos();
+    } catch (err) {
+      console.error(err);
+      alerts.error('Error', 'No se pudo cambiar el estado del turno.');
+    }
+  };
+
+  const handleCrearTurnoManual = async (e) => {
+    e.preventDefault();
+    try {
+      const anio = fechaSeleccionada.getFullYear();
+      const mes = String(fechaSeleccionada.getMonth() + 1).padStart(2, '0');
+      const dia = String(fechaSeleccionada.getDate()).padStart(2, '0');
+      const fechaTurno = new Date(`${anio}-${mes}-${dia}T${nuevoTurnoManual.hora}:00`);
+
+      const datos = {
+        empresaId: usuario.empresaId,
+        servicioId: parseInt(nuevoTurnoManual.servicioId),
+        fecha: fechaTurno.toISOString(),
+        clienteNombre: nuevoTurnoManual.clienteNombre,
+        clienteApellido: nuevoTurnoManual.clienteApellido,
+        clienteTelefono: nuevoTurnoManual.clienteTelefono,
+        clienteEmail: nuevoTurnoManual.clienteEmail || ''
+      };
+
+      await empresaService.crearTurno(datos);
+      alerts.success('¡Agendado!', 'El turno manual se registró con éxito.');
+      setMostrarModalTurnoManual(false);
+      setNuevoTurnoManual({
+        clienteNombre: '',
+        clienteApellido: '',
+        clienteTelefono: '',
+        clienteEmail: '',
+        servicioId: '',
+        hora: '09:00'
+      });
+      cargarDatos();
+    } catch (err) {
+      console.error(err);
+      alerts.error('Error', err.response?.data?.mensaje || 'No se pudo agendar el turno.');
+    }
+  };
+
+  const cambiarMes = (offset) => {
+    setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + offset, 1));
+  };
+
+  const obtenerDiasCalendario = () => {
+    const anio = mesActual.getFullYear();
+    const mes = mesActual.getMonth();
+
+    const primerDia = new Date(anio, mes, 1).getDay();
+    const totalDias = new Date(anio, mes + 1, 0).getDate();
+
+    const dias = [];
+
+    // Rellenar espacios vacíos antes del primer día (Ajustando a semana que empieza el Lunes)
+    const offset = primerDia === 0 ? 6 : primerDia - 1;
+    for (let i = 0; i < offset; i++) {
+      dias.push(null);
+    }
+
+    for (let d = 1; d <= totalDias; d++) {
+      dias.push(new Date(anio, mes, d));
+    }
+
+    return dias;
+  };
+
+  const diaTieneTurnos = (date) => {
+    if (!date) return false;
+    return turnos.some(t => {
+      const fechaTurno = new Date(t.fecha);
+      return (
+        fechaTurno.getFullYear() === date.getFullYear() &&
+        fechaTurno.getMonth() === date.getMonth() &&
+        fechaTurno.getDate() === date.getDate() &&
+        t.estado !== 'CANCELADO'
+      );
+    });
+  };
+
+  const esMismoDia = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  };
+
+  const generarSlotsDelDia = () => {
+    const rangoPorDefecto = [];
+    for (let h = 9; h < 20; h++) {
+      const horaStr = h < 10 ? `0${h}` : `${h}`;
+      rangoPorDefecto.push(`${horaStr}:00`);
+      rangoPorDefecto.push(`${horaStr}:30`);
+    }
+
+    if (!miEmpresa?.horarios) {
+      return rangoPorDefecto;
+    }
+
+    try {
+      // Extraer todas las horas con formato HH:MM (ej: 09:00, 12:30)
+      const regex = /\b\d{2}:\d{2}\b/g;
+      const matches = miEmpresa.horarios.match(regex);
+
+      if (!matches || matches.length < 2) {
+        return rangoPorDefecto;
+      }
+
+      const slots = [];
+
+      // Procesar los rangos en parejas de inicio y fin
+      for (let i = 0; i < matches.length; i += 2) {
+        if (!matches[i + 1]) break; // Si no hay pareja de fin, salir
+
+        const [startHoras, startMinutos] = matches[i].split(':').map(Number);
+        const [endHoras, endMinutos] = matches[i + 1].split(':').map(Number);
+
+        // Convertir todo a minutos absolutos para evitar problemas aritméticos
+        const inicioEnMinutos = startHoras * 60 + startMinutos;
+        const finEnMinutos = endHoras * 60 + endMinutos;
+
+        // Generar intervalos de 30 minutos (el último turno debe iniciar antes de la hora de cierre)
+        for (let m = inicioEnMinutos; m < finEnMinutos; m += 30) {
+          const h = Math.floor(m / 60);
+          const min = m % 60;
+          const hStr = h < 10 ? `0${h}` : `${h}`;
+          const minStr = min === 0 ? '00' : `${min}`;
+          slots.push(`${hStr}:${minStr}`);
+        }
+      }
+
+      return slots.length > 0 ? slots : rangoPorDefecto;
+    } catch (error) {
+      console.error('Error al generar slots de horario:', error);
+      return rangoPorDefecto;
+    }
+  };
+
+  // --- FIN LÓGICA DE TURNOS ---
+
   const sidebarItems = (
     <>
       <NavItem active={seccion === 'inicio'} onClick={() => setSeccion('inicio')} icon={<LayoutDashboard size={20} />} label="Inicio" />
@@ -135,20 +340,38 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     );
   }
 
+  // Formateador de fechas
+  const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const nombresDiasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+  const hoyCero = new Date();
+  hoyCero.setHours(0, 0, 0, 0);
+  const esDiaPasado = fechaSeleccionada < hoyCero;
+
   return (
     <DashboardLayout
       usuario={usuario} logout={logout} navigate={navigate}
       sidebarItems={sidebarItems}
       titulo={miEmpresa?.nombre || 'Mi Empresa'}
       subtitulo={`Gestión de ${seccion}`}
-      accionesExtra={seccion === 'servicios' && <button onClick={() => setMostrarModalServicio(true)} className="btn-primary">Nuevo Servicio</button>}
+      accionesExtra={
+        seccion === 'servicios' ? (
+          <button onClick={() => setMostrarModalServicio(true)} className="btn-primary">Nuevo Servicio</button>
+        ) : seccion === 'turnos' ? (
+          !esDiaPasado && (
+            <button onClick={() => setMostrarModalTurnoManual(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Plus size={16} /> Agendar Turno
+            </button>
+          )
+        ) : null
+      }
       empresa={miEmpresa}
     >
       {/* Contenido según pestaña */}
       {seccion === 'inicio' && (
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3>Bienvenido, {usuario.nombre}</h3>
-          <p style={{ color: 'var(--text-muted)' }}>Hoy tienes 0 turnos pendientes.</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hoy tienes {turnos.filter(t => esMismoDia(new Date(t.fecha), new Date()) && t.estado !== 'CANCELADO').length} turnos programados.</p>
         </div>
       )}
 
@@ -171,6 +394,234 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {seccion === 'turnos' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '2rem', flexWrap: 'wrap' }}>
+          {/* COLUMNA CALENDARIO */}
+          <div className="glass-card" style={{ padding: '1.8rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>
+                {nombresMeses[mesActual.getMonth()]} {mesActual.getFullYear()}
+              </h3>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => cambiarMes(-1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '6px', color: 'white', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
+                <button onClick={() => cambiarMes(1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '6px', color: 'white', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+              </div>
+            </div>
+
+            {/* Días de la semana */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', fontWeight: 'bold', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div>LU</div><div>MA</div><div>MI</div><div>JU</div><div>VI</div><div>SA</div><div>DO</div>
+            </div>
+
+            {/* Celdas del Calendario */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.6rem', textAlign: 'center' }}>
+              {obtenerDiasCalendario().map((dia, idx) => {
+                if (!dia) return <div key={`empty-${idx}`} />;
+                const seleccionado = esMismoDia(dia, fechaSeleccionada);
+                const hoy = esMismoDia(dia, new Date());
+                const tieneCitas = diaTieneTurnos(dia);
+
+                return (
+                  <button
+                    key={`dia-${idx}`}
+                    onClick={() => setFechaSeleccionada(dia)}
+                    style={{
+                      position: 'relative',
+                      background: seleccionado ? 'var(--primary)' : 'var(--glass)',
+                      border: seleccionado ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      padding: '0.75rem 0',
+                      color: seleccionado ? 'black' : hoy ? 'var(--primary)' : 'white',
+                      fontWeight: seleccionado || hoy ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: '42px'
+                    }}
+                  >
+                    {dia.getDate()}
+                    {tieneCitas && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: '4px',
+                          width: '5px',
+                          height: '5px',
+                          borderRadius: '50%',
+                          background: seleccionado ? 'black' : 'var(--primary)',
+                          boxShadow: seleccionado ? 'none' : '0 0 5px var(--primary)'
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* COLUMNA AGENDA DIARIA */}
+          <div className="glass-card" style={{ padding: '1.8rem', minHeight: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.8rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+              <div>
+                <h3 style={{ color: 'var(--primary)', fontSize: '1.3rem' }}>
+                  {nombresDiasSemana[fechaSeleccionada.getDay()]}
+                </h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {fechaSeleccionada.getDate()} de {nombresMeses[fechaSeleccionada.getMonth()]} de {fechaSeleccionada.getFullYear()}
+                </span>
+              </div>
+            </div>
+
+            {/* Listado de bloques de horarios (Agenda) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '550px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {generarSlotsDelDia().map((slot, idx) => {
+                // Buscar si hay un turno en este slot específico
+                const turnoEnSlot = turnos.find(t => {
+                  const f = new Date(t.fecha);
+                  const horaStr = `${String(f.getHours()).padStart(2, '0')}:${String(f.getMinutes()).padStart(2, '0')}`;
+                  return esMismoDia(f, fechaSeleccionada) && horaStr === slot && t.estado !== 'CANCELADO';
+                });
+
+                return (
+                  <div
+                    key={`slot-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1.2rem',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}
+                  >
+                    {/* Hora */}
+                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold', minWidth: '50px', color: 'var(--text-muted)' }}>
+                      {slot}
+                    </div>
+
+                    {/* Contenido (Turno o Libre) */}
+                    <div style={{ flex: 1 }}>
+                      {turnoEnSlot ? (
+                        <div
+                          style={{
+                            background: 'rgba(201, 160, 99, 0.05)',
+                            border: '1px solid var(--glass-border)',
+                            borderLeft: '4px solid var(--primary)',
+                            borderRadius: '6px',
+                            padding: '0.8rem 1rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '1rem'
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <User size={14} color="var(--primary)" />
+                              <strong style={{ fontSize: '0.95rem' }}>{turnoEnSlot.cliente.nombre} {turnoEnSlot.cliente.apellido}</strong>
+
+                              {/* Badge de Estado */}
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold',
+                                  background: turnoEnSlot.estado === 'PENDIENTE' ? '#f1c40f22' : turnoEnSlot.estado === 'CONFIRMADO' ? '#2ecc7122' : '#3498db22',
+                                  color: turnoEnSlot.estado === 'PENDIENTE' ? '#f1c40f' : turnoEnSlot.estado === 'CONFIRMADO' ? '#2ecc71' : '#3498db',
+                                  border: `1px solid ${turnoEnSlot.estado === 'PENDIENTE' ? '#f1c40f44' : turnoEnSlot.estado === 'CONFIRMADO' ? '#2ecc7144' : '#3498db44'}`
+                                }}
+                              >
+                                {turnoEnSlot.estado}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Scissors size={12} /> {turnoEnSlot.servicio.nombre} (${turnoEnSlot.servicio.precio})</span>
+                              {turnoEnSlot.cliente.telefono && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Phone size={12} /> {turnoEnSlot.cliente.telefono}</span>}
+                            </div>
+                          </div>
+
+                          {/* Botones de acción del dueño */}
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {turnoEnSlot.estado === 'PENDIENTE' && (
+                              <>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turnoEnSlot.id, 'CONFIRMADO')}
+                                  style={{ background: 'rgba(46, 204, 113, 0.15)', border: '1px solid #2ecc71', color: '#2ecc71', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                >
+                                  <Check size={12} /> Confirmar
+                                </button>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turnoEnSlot.id, 'CANCELADO')}
+                                  style={{ background: 'rgba(231, 76, 60, 0.15)', border: '1px solid #e74c3c', color: '#e74c3c', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                >
+                                  <X size={12} /> Cancelar
+                                </button>
+                              </>
+                            )}
+                            {turnoEnSlot.estado === 'CONFIRMADO' && (
+                              <>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turnoEnSlot.id, 'COMPLETADO')}
+                                  style={{ background: 'rgba(52, 152, 219, 0.15)', border: '1px solid #3498db', color: '#3498db', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                >
+                                  <CheckCircle size={12} /> Finalizar
+                                </button>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turnoEnSlot.id, 'CANCELADO')}
+                                  style={{ background: 'rgba(231, 76, 60, 0.15)', border: '1px solid #e74c3c', color: '#e74c3c', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                >
+                                  <X size={12} /> Cancelar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0.8rem' }}>
+                          <span style={{ fontSize: '0.85rem', color: esDiaPasado ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+                            {esDiaPasado ? 'No disponible' : 'Disponible'}
+                          </span>
+                          {!esDiaPasado && (
+                            <button
+                              onClick={() => {
+                                setNuevoTurnoManual(prev => ({ ...prev, hora: slot }));
+                                setMostrarModalTurnoManual(true);
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: '1px dashed rgba(201,160,99,0.3)',
+                                color: 'var(--primary)',
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -218,8 +669,12 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                   style={modalStyles.input}
                   value={formEmpresa.horarios}
                   onChange={e => setFormEmpresa({ ...formEmpresa, horarios: e.target.value })}
-                  placeholder="Ej: 09:00 a 20:00"
+                  placeholder="Ej: 09:00 a 13:00, 16:30 a 20:30"
+                  required
                 />
+                <span style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '0.1rem' }}>
+                  * Formato HH:MM requerido. Ej: "09:00 a 18:00" o "09:00 a 13:00, 16:00 a 20:00"
+                </span>
               </div>
             </div>
 
@@ -234,23 +689,64 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
             </div>
 
             <div style={inputGroupStyle}>
-              <label style={labelStyle}>URL del Logo (Imagen)</label>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <label style={labelStyle}>Logo de la Empresa</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Selector local premium */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <label
+                    htmlFor="logo-local-file"
+                    className="btn-primary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      margin: 0,
+                      padding: '0.6rem 1.2rem',
+                      background: 'rgba(201, 160, 99, 0.1)',
+                      border: '1px dashed var(--primary)',
+                      color: 'var(--primary)',
+                      fontSize: '0.9rem',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <Upload size={18} />
+                    Subir Logo Local
+                  </label>
+                  <input
+                    type="file"
+                    id="logo-local-file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleSubirLogoLocal}
+                  />
+
+                  {formEmpresa.logo && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '55px', height: '55px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 12px rgba(201,160,99,0.3)', background: 'var(--glass)' }}>
+                        <img src={formEmpresa.logo} alt="Preview Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Logotipo actual</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Separador estético elegante */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.2rem 0' }}>
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--glass-border)', opacity: 0.5 }} />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>O TAMBIÉN PUEDES USAR UNA URL DE INTERNET</span>
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--glass-border)', opacity: 0.5 }} />
+                </div>
+
+                {/* Entrada de URL clásica */}
                 <input
-                  style={{ ...modalStyles.input, flex: 1 }}
+                  style={modalStyles.input}
                   value={formEmpresa.logo}
                   onChange={e => setFormEmpresa({ ...formEmpresa, logo: e.target.value })}
-                  placeholder="https://link-a-tu-imagen.jpg"
+                  placeholder="https://ejemplo.com/tu-logo.jpg"
                 />
-                {formEmpresa.logo && (
-                  <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-                    <img src={formEmpresa.logo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                )}
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
-                <ImageIcon size={12} /> Se recomienda una imagen cuadrada de al menos 200x200px.
-              </p>
+
             </div>
 
             <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', marginTop: '1rem' }}>
@@ -261,7 +757,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
         </div>
       )}
 
-      {/* Modales */}
+      {/* MODAL NUEVO SERVICIO */}
       {mostrarModalServicio && (
         <div style={modalStyles.overlay}>
           <div className="glass-card" style={modalStyles.content}>
@@ -279,6 +775,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
         </div>
       )}
 
+      {/* MODAL EDITAR SERVICIO */}
       {mostrarModalEditar && (
         <div style={modalStyles.overlay}>
           <div className="glass-card" style={modalStyles.content}>
@@ -290,6 +787,55 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button type="button" onClick={() => { setMostrarModalEditar(false); setServicioEnEdicion(null); }} style={modalStyles.btnSec}>Cancelar</button>
                 <button type="submit" className="btn-primary" style={{ flex: 1 }}>Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AGENDAR TURNO MANUAL */}
+      {mostrarModalTurnoManual && (
+        <div style={modalStyles.overlay}>
+          <div className="glass-card" style={modalStyles.content}>
+            <h2 className="heading-gold">AGENDAR TURNO MANUAL</h2>
+            <form onSubmit={handleCrearTurnoManual} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <input placeholder="Nombre Cliente" value={nuevoTurnoManual.clienteNombre} onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, clienteNombre: e.target.value })} style={modalStyles.input} required />
+                <input placeholder="Apellido Cliente" value={nuevoTurnoManual.clienteApellido} onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, clienteApellido: e.target.value })} style={modalStyles.input} required />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <input placeholder="Teléfono (Ej: +54...)" value={nuevoTurnoManual.clienteTelefono} onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, clienteTelefono: e.target.value })} style={modalStyles.input} required />
+                <input placeholder="Email (Opcional)" value={nuevoTurnoManual.clienteEmail} onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, clienteEmail: e.target.value })} style={modalStyles.input} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1rem' }}>
+                <select
+                  value={nuevoTurnoManual.servicioId}
+                  onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, servicioId: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                >
+                  <option value="">Seleccionar Servicio...</option>
+                  {servicios.map(s => (
+                    <option key={s.id} value={s.id} style={{ background: '#1a1d21' }}>{s.nombre} (${s.precio})</option>
+                  ))}
+                </select>
+
+                <select
+                  value={nuevoTurnoManual.hora}
+                  onChange={e => setNuevoTurnoManual({ ...nuevoTurnoManual, hora: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                >
+                  {generarSlotsDelDia().map(slot => (
+                    <option key={slot} value={slot} style={{ background: '#1a1d21' }}>{slot} hs</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setMostrarModalTurnoManual(false)} style={modalStyles.btnSec}>Cancelar</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Agendar Turno</button>
               </div>
             </form>
           </div>

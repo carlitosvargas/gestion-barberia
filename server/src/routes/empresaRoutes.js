@@ -4,8 +4,8 @@ const { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, actualizarEmpresa } 
 const { verificarToken, esAdmin, esDueño } = require('../middlewares/authMiddleware');
 
 router.post('/', verificarToken, esAdmin, crearEmpresa);
-router.get('/', verificarToken, obtenerEmpresas); 
-router.get('/:id', verificarToken, obtenerEmpresaPorId);
+router.get('/', obtenerEmpresas); 
+router.get('/:id', obtenerEmpresaPorId);
 router.put('/:id', verificarToken, esDueño, actualizarEmpresa);
 
 module.exports = router;

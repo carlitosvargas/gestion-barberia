@@ -28,6 +28,18 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
 
   const handleCrearEmpresa = async (e) => {
     e.preventDefault();
+
+    // Validar el formato de horarios en el frontend
+    if (nuevaEmpresa.horarios && nuevaEmpresa.horarios.trim() !== '') {
+      const matches = nuevaEmpresa.horarios.match(/\b\d{2}:\d{2}\b/g);
+      if (!matches || matches.length < 2 || matches.length % 2 !== 0) {
+        return alerts.error(
+          'Formato de Horarios Inválido',
+          "Debes ingresar parejas de inicio y fin válidas en formato HH:MM. Ej: '09:00 a 13:00' o '09:00 a 13:00, 16:00 a 20:00'"
+        );
+      }
+    }
+
     try {
       await adminService.crearEmpresa(nuevaEmpresa);
       alerts.success('¡Creada!', 'La sucursal se ha registrado con éxito.');
@@ -97,7 +109,10 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <input placeholder="Días (Ej: Lun a Vie)" value={nuevaEmpresa.dias} onChange={e => setNuevaEmpresa({ ...nuevaEmpresa, dias: e.target.value })} style={modalStyles.input} />
-                <input placeholder="Horarios (Ej: 09:00 - 20:00)" value={nuevaEmpresa.horarios} onChange={e => setNuevaEmpresa({ ...nuevaEmpresa, horarios: e.target.value })} style={modalStyles.input} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  <input placeholder="Horarios (Ej: 09:00 a 20:00)" value={nuevaEmpresa.horarios} onChange={e => setNuevaEmpresa({ ...nuevaEmpresa, horarios: e.target.value })} style={modalStyles.input} required />
+                  <span style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>Formato HH:MM. Ej: 09:00 a 13:00, 16:00 a 20:00</span>
+                </div>
               </div>
 
               <input placeholder="Dirección" value={nuevaEmpresa.direccion} onChange={e => setNuevaEmpresa({ ...nuevaEmpresa, direccion: e.target.value })} style={modalStyles.input} />

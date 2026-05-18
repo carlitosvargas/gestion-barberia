@@ -10,6 +10,16 @@ const empresaService = {
     const res = await api.put(`/empresas/${id}`, datos);
     return res.data;
   },
+  subirImagen: async (blobImagen) => {
+    const formData = new FormData();
+    formData.append('imagen', blobImagen, 'logo-barberia.jpg');
+    const res = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return res.data; // Retorna { url: '...' }
+  },
   
   // Gestión de Servicios
   obtenerServicios: async () => {
@@ -26,6 +36,20 @@ const empresaService = {
   },
   eliminarServicio: async (id) => {
     const res = await api.delete(`/servicios/${id}`);
+    return res.data;
+  },
+
+  // Gestión de Turnos (Agenda)
+  obtenerTurnos: async (empresaId) => {
+    const res = await api.get(`/turnos/empresa/${empresaId}`);
+    return res.data;
+  },
+  actualizarEstadoTurno: async (id, estado) => {
+    const res = await api.put(`/turnos/${id}/estado`, { estado });
+    return res.data;
+  },
+  crearTurno: async (datos) => {
+    const res = await api.post('/turnos', datos);
     return res.data;
   }
 };

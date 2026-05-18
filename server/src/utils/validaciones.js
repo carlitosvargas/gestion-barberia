@@ -24,7 +24,15 @@ const esquemaEmpresa = z.object({
   telefono: z.string().optional(),
   logo: z.string().url({ message: "El logo debe ser una URL válida" }).optional().or(z.literal("")),
   dias: z.string().optional(),
-  horarios: z.string().optional(),
+  horarios: z.string().optional().refine(val => {
+    if (!val || val.trim() === "") return true;
+    const matches = val.match(/\b\d{2}:\d{2}\b/g);
+    if (!matches) return false;
+    // Obligar a que haya al menos un rango completo (2 horas) y que las horas encontradas sean par (parejas de inicio/fin)
+    return matches.length >= 2 && matches.length % 2 === 0;
+  }, {
+    message: "El formato de horarios debe contener parejas de inicio y fin válidas. Ej: '09:00 a 13:00' o '09:00 a 13:00, 16:00 a 20:00'"
+  }),
 });
 
 module.exports = { esquemaRegistro, esquemaLogin, esquemaEmpresa };

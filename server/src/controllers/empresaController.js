@@ -44,9 +44,42 @@ const obtenerEmpresaPorId = async (req, res) => {
 const actualizarEmpresa = async (req, res) => {
   const { id } = req.params;
   const { nombre, direccion, telefono, logo, dias, horarios } = req.body;
+  
   try {
+    const empresaIdInt = parseInt(id);
+
+    // 1. Obtener la empresa actual para comparar el horario
+    const empresaActual = await prisma.empresa.findUnique({
+      where: { id: empresaIdInt }
+    });
+
+    if (!empresaActual) {
+      return res.status(404).json({ mensaje: 'Empresa no encontrada' });
+    }
+
+    // 2. Si el horario cambia, verificar si hay turnos activos futuros o para hoy
+    if (horarios !== undefined && horarios !== empresaActual.horarios) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const turnoActivoFuturo = await prisma.turno.findFirst({
+        where: {
+          empresaId: empresaIdInt,
+          fecha: { gte: hoy },
+          estado: { in: ['PENDIENTE', 'CONFIRMADO'] }
+        }
+      });
+
+      if (turnoActivoFuturo) {
+        return res.status(400).json({
+          mensaje: 'No puedes modificar el horario de atención porque tienes turnos programados (pendientes o confirmados) a partir de hoy. Debes atenderlos, completarlos o cancelarlos todos antes de realizar el cambio.'
+        });
+      }
+    }
+
+    // 3. Proceder a actualizar la empresa
     const empresa = await prisma.empresa.update({
-      where: { id: parseInt(id) },
+      where: { id: empresaIdInt },
       data: { nombre, direccion, telefono, logo, dias, horarios }
     });
     res.json(empresa);
