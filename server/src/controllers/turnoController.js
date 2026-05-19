@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const { enviarEmailConfirmacion, enviarEmailCancelacion } = require('../utils/mailer');
 
 // Obtener todos los turnos de una empresa específica
 const obtenerTurnosEmpresa = async (req, res) => {
@@ -55,20 +56,42 @@ const crearTurno = async (req, res) => {
       });
     }
 
-    // 3. Crear el turno
+    // 3. Obtener datos de la empresa y servicio para el correo
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: parseInt(empresaId) }
+    });
+
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: parseInt(servicioId) }
+    });
+
+    // 4. Crear el turno (Modo Automático: CONFIRMADO)
     const nuevoTurno = await prisma.turno.create({
       data: {
         empresaId: parseInt(empresaId),
         servicioId: parseInt(servicioId),
         clienteId: cliente.id,
         fecha: new Date(fecha),
-        estado: 'PENDIENTE'
+        estado: 'CONFIRMADO'
       },
       include: {
         cliente: true,
         servicio: true
       }
     });
+
+    // Enviar correo de confirmación si el cliente tiene email (de manera asíncrona)
+    if (cliente.email) {
+      enviarEmailConfirmacion(cliente.email, {
+        clienteNombre: `${cliente.nombre} ${cliente.apellido}`,
+        barberia: empresa?.nombre || 'Barbería',
+        barberiaDireccion: empresa?.direccion || '',
+        barberiaTelefono: empresa?.telefono || '',
+        servicioNombre: servicio?.nombre || 'Servicio',
+        servicioPrecio: servicio?.precio || 0,
+        fecha: nuevoTurno.fecha
+      }).catch(err => console.error('Error al enviar correo confirmación:', err));
+    }
 
     res.status(201).json(nuevoTurno);
   } catch (error) {
@@ -87,9 +110,22 @@ const actualizarEstadoTurno = async (req, res) => {
       data: { estado },
       include: {
         cliente: true,
-        servicio: true
+        servicio: true,
+        empresa: true
       }
     });
+
+    // Si el turno se canceló y el cliente tiene email, enviamos correo de cancelación (asíncronamente)
+    if (estado === 'CANCELADO' && turnoActualizado.cliente?.email) {
+      enviarEmailCancelacion(turnoActualizado.cliente.email, {
+        clienteNombre: `${turnoActualizado.cliente.nombre} ${turnoActualizado.cliente.apellido}`,
+        barberia: turnoActualizado.empresa?.nombre || 'Barbería',
+        barberiaTelefono: turnoActualizado.empresa?.telefono || '',
+        servicioNombre: turnoActualizado.servicio?.nombre || 'Servicio',
+        fecha: turnoActualizado.fecha
+      }).catch(err => console.error('Error al enviar correo cancelación:', err));
+    }
+
     res.json(turnoActualizado);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar el estado del turno', error: error.message });

@@ -6,8 +6,8 @@ export const DashboardLayout = ({ usuario, logout, navigate, children, sidebarIt
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0c' }}>
       {/* Sidebar Compartido */}
       <aside style={{ width: '280px', background: 'var(--glass)', borderRight: '1px solid var(--glass-border)', padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-        
-        {/* Logo de la Barbería (si existe) */}
+
+        {/* Logo de la Barbería  */}
         {empresa?.logo ? (
           <div style={{ width: '80px', height: '80px', margin: '0 auto 2rem auto', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 15px rgba(201, 160, 99, 0.3)' }}>
             <img src={empresa.logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

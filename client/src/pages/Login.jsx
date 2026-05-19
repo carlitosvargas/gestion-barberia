@@ -37,6 +37,11 @@ const Login = () => {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div className="glass-card" style={{ padding: '3rem', width: '100%', maxWidth: '400px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.2rem' }}>
+          <Link to="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--primary)'} onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}>
+            ← Volver al Inicio
+          </Link>
+        </div>
         <h2 className="heading-gold" style={{ textAlign: 'center', marginBottom: '2rem' }}>ACCESO PANEL</h2>
 
         {error && (

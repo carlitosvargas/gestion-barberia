@@ -4,7 +4,7 @@ import { DashboardLayout, NavItem, modalStyles } from '../../components/dashboar
 import {
   Calendar, Scissors, Settings, Trash2, LayoutDashboard, Pencil, Save,
   Image as ImageIcon, Building2, Clock, Upload, ChevronLeft, ChevronRight,
-  Plus, Check, X, User, Phone, CheckCircle
+  Plus, Check, X, User, Phone, CheckCircle, BarChart3
 } from 'lucide-react';
 import alerts from '../../utils/alerts';
 import { optimizarImagen } from '../../utils/imageOptimizer';
@@ -44,6 +44,8 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     hora: '09:00'
   });
 
+  const [filtroEstado, setFiltroEstado] = useState('TODOS');
+
   useEffect(() => {
     cargarDatos();
   }, [seccion]);
@@ -68,7 +70,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
         const data = await empresaService.obtenerServicios();
         setServicios(data);
       }
-      if (seccion === 'turnos') {
+      if (seccion === 'turnos' || seccion === 'reportes') {
         const dataServicios = await empresaService.obtenerServicios();
         setServicios(dataServicios);
         if (usuario.empresaId) {
@@ -170,9 +172,34 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
 
   const handleCambiarEstadoTurno = async (turnoId, nuevoEstado) => {
     try {
+      const turnoAfectado = turnos.find(t => t.id === turnoId);
+
       await empresaService.actualizarEstadoTurno(turnoId, nuevoEstado);
       alerts.toast(`Turno ${nuevoEstado.toLowerCase()} con éxito`, 'success');
       cargarDatos();
+
+      // Si el dueño cancela el turno, ofrecer enviarle un WhatsApp al cliente
+      if (nuevoEstado === 'CANCELADO' && turnoAfectado?.cliente?.telefono) {
+        const confirmacion = await alerts.confirm(
+          '¿Notificar al cliente?',
+          `¿Deseas enviarle un mensaje automático al WhatsApp de ${turnoAfectado.cliente.nombre} informando la cancelación del turno?`
+        );
+
+        if (confirmacion.isConfirmed) {
+          const fechaObj = new Date(turnoAfectado.fecha);
+          const horaStr = `${String(fechaObj.getHours()).padStart(2, '0')}:${String(fechaObj.getMinutes()).padStart(2, '0')}`;
+          const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
+          });
+
+          const mensaje = `Hola *${turnoAfectado.cliente.nombre}*! Te escribimos de *${miEmpresa?.nombre || 'nuestro establecimiento'}* para informarte que lamentablemente hemos cancelado tu turno de *${turnoAfectado.servicio?.nombre || 'Servicio'}* agendado para el *${fechaFormateada}* a las *${horaStr} hs*. Pedimos disculpas por cualquier inconveniente provocado.`;
+
+          const linkWhatsApp = `https://wa.me/${turnoAfectado.cliente.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(mensaje)}`;
+          window.open(linkWhatsApp, '_blank');
+        }
+      }
     } catch (err) {
       console.error(err);
       alerts.error('Error', 'No se pudo cambiar el estado del turno.');
@@ -320,6 +347,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     <>
       <NavItem active={seccion === 'inicio'} onClick={() => setSeccion('inicio')} icon={<LayoutDashboard size={20} />} label="Inicio" />
       <NavItem active={seccion === 'turnos'} onClick={() => setSeccion('turnos')} icon={<Calendar size={20} />} label="Turnos" />
+      <NavItem active={seccion === 'reportes'} onClick={() => setSeccion('reportes')} icon={<BarChart3 size={20} />} label="Reportes" />
       <NavItem active={seccion === 'servicios'} onClick={() => setSeccion('servicios')} icon={<Scissors size={20} />} label="Servicios" />
       <NavItem active={seccion === 'configuracion'} onClick={() => setSeccion('configuracion')} icon={<Settings size={20} />} label="Mi Empresa" />
     </>
@@ -754,6 +782,360 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
               Guardar Cambios
             </button>
           </form>
+        </div>
+      )}
+
+      {seccion === 'reportes' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+          {/* TARJETAS DE ESTADÍSTICAS PREMIUM */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+
+            {/* PENDIENTES */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '1.8rem',
+                borderLeft: '4px solid #f1c40f',
+                background: 'rgba(241, 196, 15, 0.03)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold', letterSpacing: '0.5px' }}>PENDIENTES</span>
+                <Clock size={20} color="#f1c40f" />
+              </div>
+              <h2 style={{ fontSize: '2.5rem', color: '#f1c40f', marginTop: '1rem', fontWeight: '800' }}>
+                {turnos.filter(t => t.estado === 'PENDIENTE').length}
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Turnos por confirmar</p>
+            </div>
+
+            {/* CONFIRMADOS */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '1.8rem',
+                borderLeft: '4px solid #3498db',
+                background: 'rgba(52, 152, 219, 0.03)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold', letterSpacing: '0.5px' }}>CONFIRMADOS</span>
+                <Check size={20} color="#3498db" />
+              </div>
+              <h2 style={{ fontSize: '2.5rem', color: '#3498db', marginTop: '1rem', fontWeight: '800' }}>
+                {turnos.filter(t => t.estado === 'CONFIRMADO').length}
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Turnos confirmados activos</p>
+            </div>
+
+            {/* FINALIZADOS */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '1.8rem',
+                borderLeft: '4px solid #2ecc71',
+                background: 'rgba(46, 204, 113, 0.03)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold', letterSpacing: '0.5px' }}>FINALIZADOS</span>
+                <CheckCircle size={20} color="#2ecc71" />
+              </div>
+              <h2 style={{ fontSize: '2.5rem', color: '#2ecc71', marginTop: '1rem', fontWeight: '800' }}>
+                {turnos.filter(t => t.estado === 'COMPLETADO').length}
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Servicios completados</p>
+            </div>
+
+            {/* CANCELADOS */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '1.8rem',
+                borderLeft: '4px solid #e74c3c',
+                background: 'rgba(231, 76, 60, 0.03)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold', letterSpacing: '0.5px' }}>CANCELADOS</span>
+                <X size={20} color="#e74c3c" />
+              </div>
+              <h2 style={{ fontSize: '2.5rem', color: '#e74c3c', marginTop: '1rem', fontWeight: '800' }}>
+                {turnos.filter(t => t.estado === 'CANCELADO').length}
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Turnos anulados</p>
+            </div>
+
+          </div>
+
+          {/* BARRA DE FILTROS RÁPIDOS */}
+          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>Historial de Turnos</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.2rem' }}>Total registrados: {turnos.length} turnos</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {[
+                { key: 'TODOS', label: 'Todos', color: '#ffffff', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+                { key: 'PENDIENTE', label: 'Pendientes', color: '#f1c40f', bg: 'rgba(241,196,15,0.08)', border: 'rgba(241,196,15,0.2)' },
+                { key: 'CONFIRMADO', label: 'Confirmados', color: '#3498db', bg: 'rgba(52,152,219,0.08)', border: 'rgba(52,152,219,0.2)' },
+                { key: 'COMPLETADO', label: 'Finalizados', color: '#2ecc71', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.2)' },
+                { key: 'CANCELADO', label: 'Cancelados', color: '#e74c3c', bg: 'rgba(231,76,60,0.08)', border: 'rgba(231,76,60,0.2)' }
+              ].map(filtro => {
+                const activo = filtroEstado === filtro.key;
+                return (
+                  <button
+                    key={filtro.key}
+                    onClick={() => setFiltroEstado(filtro.key)}
+                    style={{
+                      background: activo ? filtro.color : 'transparent',
+                      color: activo ? '#000000' : filtro.color,
+                      border: `1px solid ${activo ? filtro.color : filtro.border}`,
+                      padding: '0.5rem 1rem',
+                      borderRadius: '30px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s ease',
+                      boxShadow: activo ? `0 0 10px ${filtro.color}44` : 'none'
+                    }}
+                  >
+                    {filtro.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* LISTADO DESPLAZABLE DE TURNOS CON SCROLL */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              maxHeight: '600px',
+              overflowY: 'auto',
+              paddingRight: '0.5rem'
+            }}
+          >
+            {turnos
+              .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+              .length === 0 ? (
+              <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
+                <Calendar size={40} color="var(--primary)" style={{ opacity: 0.4, marginBottom: '1rem' }} />
+                <h4>No se encontraron turnos</h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>No hay registros correspondientes al filtro seleccionado.</p>
+              </div>
+            ) : (
+              turnos
+                .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
+                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                .map(turno => {
+                  const fechaObj = new Date(turno.fecha);
+                  const horaStr = `${String(fechaObj.getHours()).padStart(2, '0')}:${String(fechaObj.getMinutes()).padStart(2, '0')}`;
+                  const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  });
+
+                  // Colores de estado
+                  let colorEstado = '#f1c40f'; // Pendiente
+                  let bgEstado = 'rgba(241, 196, 15, 0.1)';
+                  if (turno.estado === 'CONFIRMADO') {
+                    colorEstado = '#3498db';
+                    bgEstado = 'rgba(52, 152, 219, 0.1)';
+                  } else if (turno.estado === 'COMPLETADO') {
+                    colorEstado = '#2ecc71';
+                    bgEstado = 'rgba(46, 204, 113, 0.1)';
+                  } else if (turno.estado === 'CANCELADO') {
+                    colorEstado = '#e74c3c';
+                    bgEstado = 'rgba(231, 76, 60, 0.1)';
+                  }
+
+                  // Iniciales del cliente para el avatar circular
+                  const iniciales = `${turno.cliente?.nombre?.[0] || 'C'}${turno.cliente?.apellido?.[0] || ''}`.toUpperCase();
+
+                  return (
+                    <div
+                      key={turno.id}
+                      className="glass-card"
+                      style={{
+                        padding: '1.5rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '1.5rem',
+                        flexWrap: 'wrap',
+                        borderLeft: `3px solid ${colorEstado}`,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* DATOS DEL TURNO Y SERVICIO */}
+                      <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', minWidth: '280px', flex: '1' }}>
+
+                        {/* Avatar del Cliente */}
+                        <div style={{
+                          width: '45px',
+                          height: '45px',
+                          borderRadius: '50%',
+                          background: bgEstado,
+                          border: `1px solid ${colorEstado}33`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          color: colorEstado,
+                          fontSize: '0.95rem'
+                        }}>
+                          {iniciales}
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>
+                              {turno.cliente?.nombre || 'Cliente'} {turno.cliente?.apellido || ''}
+                            </span>
+                            <span style={{
+                              fontSize: '0.75rem',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '12px',
+                              color: colorEstado,
+                              background: bgEstado,
+                              fontWeight: 'bold',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {turno.estado}
+                            </span>
+                          </div>
+
+                          <p style={{ fontSize: '0.9rem', color: 'var(--primary)', marginTop: '0.3rem', fontWeight: '500' }}>
+                            ✂️ {turno.servicio?.nombre || 'Servicio'} — <strong style={{ color: 'white' }}>${turno.servicio?.precio || 0}</strong>
+                          </p>
+
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                            📅 <span style={{ textTransform: 'capitalize' }}>{fechaFormateada}</span> a las <strong>{horaStr} hs</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* DATOS DE CONTACTO DEL CLIENTE */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '220px' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          📱 {turno.cliente?.telefono || 'Sin teléfono'}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', wordBreak: 'break-all' }}>
+                          ✉️ {turno.cliente?.email || 'Sin email registrado'}
+                        </span>
+
+                        {/* BOTONES DIRECTOS DE WHATSAPP / LLAMADA */}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+                          {turno.cliente?.telefono && (
+                            <>
+                              <a
+                                href={`https://wa.me/${turno.cliente.telefono.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-primary"
+                                style={{
+                                  padding: '0.35rem 0.75rem',
+                                  fontSize: '0.75rem',
+                                  borderRadius: '6px',
+                                  textDecoration: 'none',
+                                  background: '#25d366',
+                                  borderColor: '#25d366',
+                                  color: 'black',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                WhatsApp
+                              </a>
+                              <a
+                                href={`tel:${turno.cliente.telefono}`}
+                                style={{
+                                  padding: '0.35rem 0.75rem',
+                                  fontSize: '0.75rem',
+                                  borderRadius: '6px',
+                                  textDecoration: 'none',
+                                  background: 'transparent',
+                                  border: '1px solid var(--glass-border)',
+                                  color: 'white',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                                onMouseLeave={e => e.target.style.background = 'transparent'}
+                              >
+                                Llamar
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ACCIONES DE ESTADO RÁPIDAS */}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {turno.estado === 'PENDIENTE' && (
+                          <>
+                            <button
+                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CONFIRMADO')}
+                              className="btn-primary"
+                              style={{ padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold' }}
+                            >
+                              Confirmar
+                            </button>
+                            <button
+                              onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
+                              style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              Finalizar
+                            </button>
+                            <button
+                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
+                              style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+
+                        {turno.estado === 'CONFIRMADO' && (
+                          <>
+                            <button
+                              onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
+                              style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              Finalizar
+                            </button>
+                            <button
+                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
+                              style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                    </div>
+                  );
+                })
+            )}
+          </div>
+
         </div>
       )}
 

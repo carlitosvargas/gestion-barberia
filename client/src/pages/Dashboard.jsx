@@ -10,7 +10,7 @@ const Dashboard = () => {
 
   if (!usuario) {
     // Si no hay usuario, el useEffect de cada componente lo redirigirá, 
-    // pero aquí evitamos renderizar nada.
+
     return null;
   }
 
@@ -27,7 +27,7 @@ const Dashboard = () => {
     <div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>
       <h1>Error de Acceso</h1>
       <p>No tienes un rol asignado válido.</p>
-      <button onClick={() => logout()} className="btn-primary" style={{marginTop: '1rem'}}>Cerrar Sesión</button>
+      <button onClick={() => logout()} className="btn-primary" style={{ marginTop: '1rem' }}>Cerrar Sesión</button>
     </div>
   );
 };

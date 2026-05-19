@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import publicService from '../services/publicService';
-import { 
-  Calendar, MapPin, Phone, Clock, ArrowLeft, Scissors, Building2, 
-  ChevronRight, ChevronLeft, Check, CheckCircle, User, AlertCircle 
+import {
+  Calendar, MapPin, Phone, Clock, ArrowLeft, Scissors, Building2,
+  ChevronRight, ChevronLeft, Check, CheckCircle, User, AlertCircle
 } from 'lucide-react';
 import alerts from '../utils/alerts';
 
@@ -28,7 +28,7 @@ export default function Reserva() {
   const [slotSeleccionado, setSlotSeleccionado] = useState('');
   const [mostrarFormularioDatos, setMostrarFormularioDatos] = useState(false);
   const [cargandoConfirmar, setCargandoConfirmar] = useState(false);
-  
+
   // Datos Cliente
   const [formCliente, setFormCliente] = useState({
     nombre: '',
@@ -82,7 +82,7 @@ export default function Reserva() {
     setServicioSeleccionado(servicio);
     setSlotSeleccionado('');
     setMostrarFormularioDatos(false);
-    
+
     // Asegurarse de que la fecha seleccionada por defecto no sea pasada
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -116,7 +116,7 @@ export default function Reserva() {
       };
 
       const res = await publicService.crearTurno(datos);
-      
+
       setDetalleReservaCreada({
         fecha: fechaTurno,
         barberia: empresaSeleccionada.nombre,
@@ -262,16 +262,51 @@ export default function Reserva() {
             {detalleReservaCreada.direccion && <p style={{ fontSize: '0.95rem' }}>📍 <strong>Dirección:</strong> {detalleReservaCreada.direccion}</p>}
           </div>
 
-          <button 
-            onClick={handleReservarOtroServicio} 
-            className="btn-primary" 
+          <a
+            href={`https://wa.me/${empresaSeleccionada?.telefono?.replace(/[^0-9]/g, '') || ''}?text=${encodeURIComponent(
+              `¡Hola! Confirmo mi turno en *${detalleReservaCreada.barberia}*:\n\n` +
+              `✂️ *Servicio:* ${detalleReservaCreada.servicio}\n` +
+              `📅 *Fecha:* ${nombresDiasSemanaCompleto[detalleReservaCreada.fecha.getDay()]} ${detalleReservaCreada.fecha.getDate()} de ${nombresMeses[detalleReservaCreada.fecha.getMonth()]} de ${detalleReservaCreada.fecha.getFullYear()}\n` +
+              `🕒 *Horario:* ${slotSeleccionado} hs\n` +
+              `💵 *Precio:* $${detalleReservaCreada.precio}\n` +
+              (detalleReservaCreada.direccion ? `📍 *Dirección:* ${detalleReservaCreada.direccion}\n` : '') +
+              `\n¡Muchas gracias! Mi nombre es ${formCliente.nombre} ${formCliente.apellido}.`
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              width: '100%',
+              padding: '0.8rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              border: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#25d366',
+              color: 'black',
+              textDecoration: 'none',
+              gap: '0.5rem',
+              fontSize: '0.95rem',
+              borderRadius: '6px',
+              transition: 'transform 0.2s'
+            }}
+            onMouseEnter={e => e.target.style.transform = 'scale(1.02)'}
+            onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+          >
+            📱 Enviar confirmación a WhatsApp de la Empresa
+          </a>
+
+          <button
+            onClick={handleReservarOtroServicio}
+            className="btn-primary"
             style={{ width: '100%', padding: '0.8rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            Reservar otro servicio en esta barbería
+            Reservar otro servicio en esta sucursal
           </button>
-          
-          <Link 
-            to="/" 
+
+          <Link
+            to="/"
             style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', marginTop: '0.5rem', transition: 'color 0.2s' }}
             onMouseEnter={e => e.target.style.color = 'var(--primary)'}
             onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
@@ -291,8 +326,8 @@ export default function Reserva() {
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
             <ArrowLeft size={16} /> Volver al Inicio
           </Link>
-          <h1 className="heading-gold" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>ENCUENTRA TU BARBERÍA</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Selecciona una de nuestras sucursales disponibles para agendar tu cita con los mejores profesionales.</p>
+          <h1 className="heading-gold" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>ENCUENTRA TU SUCURSAL</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Selecciona una de nuestros locales disponibles para agendar tu cita con los mejores profesionales.</p>
         </header>
 
         {empresas.length === 0 ? (
@@ -342,9 +377,9 @@ export default function Reserva() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => navigate(`/reserva/${emp.id}`)} 
-                  className="btn-primary" 
+                <button
+                  onClick={() => navigate(`/reserva/${emp.id}`)}
+                  className="btn-primary"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}
                 >
                   Ver Servicios y Reservar <ChevronRight size={16} />
@@ -366,7 +401,7 @@ export default function Reserva() {
     return (
       <div className="reserva-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <header style={{ marginBottom: '3rem' }}>
-          <button 
+          <button
             onClick={() => {
               if (mostrarFormularioDatos) {
                 setMostrarFormularioDatos(false);
@@ -374,7 +409,7 @@ export default function Reserva() {
                 setServicioSeleccionado(null);
                 setSlotSeleccionado('');
               }
-            }} 
+            }}
             style={{ background: 'transparent', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem', padding: 0 }}
           >
             <ArrowLeft size={16} /> Volver a {mostrarFormularioDatos ? 'elegir fecha y hora' : 'elegir servicios'}
@@ -394,7 +429,7 @@ export default function Reserva() {
         {!mostrarFormularioDatos ? (
           /* PASO A: CALENDARIO Y HORA */
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '2.5rem', flexWrap: 'wrap' }}>
-            
+
             {/* LADO IZQUIERDO: CALENDARIO CLIENTE */}
             <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -500,9 +535,9 @@ export default function Reserva() {
 
                   {slotSeleccionado && (
                     <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                      <button 
-                        onClick={() => setMostrarFormularioDatos(true)} 
-                        className="btn-primary" 
+                      <button
+                        onClick={() => setMostrarFormularioDatos(true)}
+                        className="btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 2rem', fontWeight: 'bold' }}
                       >
                         Continuar con mis datos <ChevronRight size={18} />
@@ -517,7 +552,7 @@ export default function Reserva() {
         ) : (
           /* PASO B: FORMULARIO DE RESERVA CLIENTE */
           <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '2.5rem', flexWrap: 'wrap' }}>
-            
+
             {/* LADO IZQUIERDO: FORMULARIO */}
             <div className="glass-card" style={{ padding: '2.5rem' }}>
               <h2 className="heading-gold" style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>DATOS PERSONALES</h2>
@@ -527,22 +562,22 @@ export default function Reserva() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre</label>
-                    <input 
-                      placeholder="Ej: Juan" 
-                      value={formCliente.nombre} 
-                      onChange={e => setFormCliente({ ...formCliente, nombre: e.target.value })} 
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} 
-                      required 
+                    <input
+                      placeholder="Ej: Juan"
+                      value={formCliente.nombre}
+                      onChange={e => setFormCliente({ ...formCliente, nombre: e.target.value })}
+                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
+                      required
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Apellido</label>
-                    <input 
-                      placeholder="Ej: Pérez" 
-                      value={formCliente.apellido} 
-                      onChange={e => setFormCliente({ ...formCliente, apellido: e.target.value })} 
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} 
-                      required 
+                    <input
+                      placeholder="Ej: Pérez"
+                      value={formCliente.apellido}
+                      onChange={e => setFormCliente({ ...formCliente, apellido: e.target.value })}
+                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
+                      required
                     />
                   </div>
                 </div>
@@ -550,29 +585,29 @@ export default function Reserva() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Teléfono Celular</label>
-                    <input 
-                      placeholder="Ej: +54 9 11..." 
-                      value={formCliente.telefono} 
-                      onChange={e => setFormCliente({ ...formCliente, telefono: e.target.value })} 
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} 
-                      required 
+                    <input
+                      placeholder="Ej: +54 9 11..."
+                      value={formCliente.telefono}
+                      onChange={e => setFormCliente({ ...formCliente, telefono: e.target.value })}
+                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
+                      required
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Correo Electrónico (Opcional)</label>
-                    <input 
-                      placeholder="juanperez@ejemplo.com" 
+                    <input
+                      placeholder="juanperez@ejemplo.com"
                       type="email"
-                      value={formCliente.email} 
-                      onChange={e => setFormCliente({ ...formCliente, email: e.target.value })} 
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} 
+                      value={formCliente.email}
+                      onChange={e => setFormCliente({ ...formCliente, email: e.target.value })}
+                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
                     />
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="btn-primary" 
+                <button
+                  type="submit"
+                  className="btn-primary"
                   disabled={cargandoConfirmar}
                   style={{ width: '100%', padding: '0.9rem', marginTop: '1.5rem', fontWeight: 'bold', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 >
@@ -593,7 +628,7 @@ export default function Reserva() {
             {/* LADO DERECHO: DETALLE DEL TURNO RESUMIDO */}
             <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.8rem', borderLeft: '4px solid var(--primary)', alignSelf: 'flex-start' }}>
               <h3 style={{ color: 'var(--primary)', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem', fontSize: '1.1rem' }}>RESUMEN DE RESERVA</h3>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Barbería</span>
@@ -635,8 +670,8 @@ export default function Reserva() {
   return (
     <div className="reserva-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ marginBottom: '3rem' }}>
-        <button 
-          onClick={() => navigate('/reserva/todas')} 
+        <button
+          onClick={() => navigate('/reserva/todas')}
           style={{ background: 'transparent', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem', padding: 0 }}
         >
           <ArrowLeft size={16} /> Volver a todas las sucursales
@@ -692,9 +727,9 @@ export default function Reserva() {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.2rem' }}>
                   <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>${serv.precio}</span>
-                  <button 
-                    onClick={() => handleSeleccionarServicio(serv)} 
-                    className="btn-primary" 
+                  <button
+                    onClick={() => handleSeleccionarServicio(serv)}
+                    className="btn-primary"
                     style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                   >
                     Seleccionar
