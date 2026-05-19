@@ -341,6 +341,31 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     }
   };
 
+  const obtenerEstadisticasClientes = () => {
+    const mapaClientes = {};
+
+    turnos.forEach(t => {
+      if (!t.cliente) return;
+      const key = t.cliente.id;
+      if (!mapaClientes[key]) {
+        mapaClientes[key] = {
+          cliente: t.cliente,
+          total: 0,
+          PENDIENTE: 0,
+          CONFIRMADO: 0,
+          COMPLETADO: 0,
+          CANCELADO: 0
+        };
+      }
+      mapaClientes[key].total += 1;
+      if (mapaClientes[key].hasOwnProperty(t.estado)) {
+        mapaClientes[key][t.estado] += 1;
+      }
+    });
+
+    return Object.values(mapaClientes).sort((a, b) => b.total - a.total);
+  };
+
   // --- FIN LÓGICA DE TURNOS ---
 
   const sidebarItems = (
@@ -873,57 +898,160 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
 
           </div>
 
-          {/* BARRA DE FILTROS RÁPIDOS */}
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>Historial de Turnos</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.2rem' }}>Total registrados: {turnos.length} turnos</p>
+          {/* DOS COLUMNAS: RANKING DE CLIENTES E HISTORIAL DE TURNOS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', alignItems: 'flex-start' }}>
+
+            {/* COLUMNA CLIENTES: ESTADÍSTICAS POR CLIENTE */}
+            <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>Frecuencia de Clientes</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.2rem' }}>Cantidad de turnos y desglose de estados por cliente</p>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  maxHeight: '600px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}
+              >
+                {obtenerEstadisticasClientes().length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    No hay datos de clientes registrados aún.
+                  </div>
+                ) : (
+                  obtenerEstadisticasClientes().map(item => {
+                    const iniciales = `${item.cliente.nombre?.[0] || 'C'}${item.cliente.apellido?.[0] || ''}`.toUpperCase();
+                    return (
+                      <div
+                        key={item.cliente.id}
+                        style={{
+                          padding: '1.2rem',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          border: '1px solid var(--glass-border)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.8rem'
+                        }}
+                      >
+                        {/* Datos Cliente */}
+                        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                          <div style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '50%',
+                            background: 'rgba(201, 160, 99, 0.1)',
+                            border: '1px solid rgba(201, 160, 99, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            color: 'var(--primary)',
+                            fontSize: '0.85rem'
+                          }}>
+                            {iniciales}
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'white' }}>
+                              {item.cliente.nombre} {item.cliente.apellido}
+                            </h4>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              📱 {item.cliente.telefono} {item.cliente.email ? `| ✉️ ${item.cliente.email}` : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Desglose de Estados */}
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.6rem' }}>
+                          <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 'bold' }}>
+                            Total: {item.total}
+                          </span>
+                          {item.COMPLETADO > 0 && (
+                            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.2)', fontWeight: 'bold' }}>
+                              Finalizados: {item.COMPLETADO}
+                            </span>
+                          )}
+                          {item.CONFIRMADO > 0 && (
+                            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.2)', fontWeight: 'bold' }}>
+                              Confirmados: {item.CONFIRMADO}
+                            </span>
+                          )}
+                          {item.PENDIENTE > 0 && (
+                            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', border: '1px solid rgba(241, 196, 15, 0.2)', fontWeight: 'bold' }}>
+                              Pendientes: {item.PENDIENTE}
+                            </span>
+                          )}
+                          {item.CANCELADO > 0 && (
+                            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.2)', fontWeight: 'bold' }}>
+                              Cancelados: {item.CANCELADO}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {[
-                { key: 'TODOS', label: 'Todos', color: '#ffffff', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
-                { key: 'PENDIENTE', label: 'Pendientes', color: '#f1c40f', bg: 'rgba(241,196,15,0.08)', border: 'rgba(241,196,15,0.2)' },
-                { key: 'CONFIRMADO', label: 'Confirmados', color: '#3498db', bg: 'rgba(52,152,219,0.08)', border: 'rgba(52,152,219,0.2)' },
-                { key: 'COMPLETADO', label: 'Finalizados', color: '#2ecc71', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.2)' },
-                { key: 'CANCELADO', label: 'Cancelados', color: '#e74c3c', bg: 'rgba(231,76,60,0.08)', border: 'rgba(231,76,60,0.2)' }
-              ].map(filtro => {
-                const activo = filtroEstado === filtro.key;
-                return (
-                  <button
-                    key={filtro.key}
-                    onClick={() => setFiltroEstado(filtro.key)}
-                    style={{
-                      background: activo ? filtro.color : 'transparent',
-                      color: activo ? '#000000' : filtro.color,
-                      border: `1px solid ${activo ? filtro.color : filtro.border}`,
-                      padding: '0.5rem 1rem',
-                      borderRadius: '30px',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: 'bold',
-                      transition: 'all 0.2s ease',
-                      boxShadow: activo ? `0 0 10px ${filtro.color}44` : 'none'
-                    }}
-                  >
-                    {filtro.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            {/* COLUMNA DERECHA: HISTORIAL DE TURNOS FILTRADO */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
 
-          {/* LISTADO DESPLAZABLE DE TURNOS CON SCROLL */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-              maxHeight: '600px',
-              overflowY: 'auto',
-              paddingRight: '0.5rem'
-            }}
-          >
+              {/* BARRA DE FILTROS RÁPIDOS */}
+              <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>Historial de Turnos</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.2rem' }}>Total: {turnos.length} turnos</p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'TODOS', label: 'Todos', color: '#ffffff', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+                    { key: 'PENDIENTE', label: 'Pendientes', color: '#f1c40f', bg: 'rgba(241,196,15,0.08)', border: 'rgba(241,196,15,0.2)' },
+                    { key: 'CONFIRMADO', label: 'Confirmados', color: '#3498db', bg: 'rgba(52,152,219,0.08)', border: 'rgba(52,152,219,0.2)' },
+                    { key: 'COMPLETADO', label: 'Finalizados', color: '#2ecc71', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.2)' },
+                    { key: 'CANCELADO', label: 'Cancelados', color: '#e74c3c', bg: 'rgba(231,76,60,0.08)', border: 'rgba(231,76,60,0.2)' }
+                  ].map(filtro => {
+                    const activo = filtroEstado === filtro.key;
+                    return (
+                      <button
+                        key={filtro.key}
+                        onClick={() => setFiltroEstado(filtro.key)}
+                        style={{
+                          background: activo ? filtro.color : 'transparent',
+                          color: activo ? '#000000' : filtro.color,
+                          border: `1px solid ${activo ? filtro.color : filtro.border}`,
+                          padding: '0.5rem 1rem',
+                          borderRadius: '30px',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          transition: 'all 0.2s ease',
+                          boxShadow: activo ? `0 0 10px ${filtro.color}44` : 'none'
+                        }}
+                      >
+                        {filtro.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* LISTADO DESPLAZABLE DE TURNOS CON SCROLL */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  maxHeight: '600px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}
+              >
             {turnos
               .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
               .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
@@ -1061,26 +1189,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                               >
                                 WhatsApp
                               </a>
-                              <a
-                                href={`tel:${turno.cliente.telefono}`}
-                                style={{
-                                  padding: '0.35rem 0.75rem',
-                                  fontSize: '0.75rem',
-                                  borderRadius: '6px',
-                                  textDecoration: 'none',
-                                  background: 'transparent',
-                                  border: '1px solid var(--glass-border)',
-                                  color: 'white',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
-                                onMouseLeave={e => e.target.style.background = 'transparent'}
-                              >
-                                Llamar
-                              </a>
+
                             </>
                           )}
                         </div>
@@ -1137,7 +1246,9 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
           </div>
 
         </div>
-      )}
+      </div>
+    </div>
+  )}
 
       {/* MODAL NUEVO SERVICIO */}
       {mostrarModalServicio && (

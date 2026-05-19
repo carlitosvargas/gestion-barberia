@@ -54,6 +54,12 @@ const crearTurno = async (req, res) => {
           email: clienteEmail || null
         }
       });
+    } else if (clienteEmail && cliente.email !== clienteEmail) {
+      // Si ya existe pero ingresó un correo nuevo o diferente, lo actualizamos
+      cliente = await prisma.cliente.update({
+        where: { id: cliente.id },
+        data: { email: clienteEmail }
+      });
     }
 
     // 3. Obtener datos de la empresa y servicio para el correo
@@ -80,9 +86,10 @@ const crearTurno = async (req, res) => {
       }
     });
 
-    // Enviar correo de confirmación si el cliente tiene email (de manera asíncrona)
-    if (cliente.email) {
-      enviarEmailConfirmacion(cliente.email, {
+    // Enviar correo de confirmación si hay un email destinatario (de manera asíncrona)
+    const emailDestinatario = clienteEmail || cliente.email;
+    if (emailDestinatario) {
+      enviarEmailConfirmacion(emailDestinatario, {
         clienteNombre: `${cliente.nombre} ${cliente.apellido}`,
         barberia: empresa?.nombre || 'Barbería',
         barberiaDireccion: empresa?.direccion || '',
