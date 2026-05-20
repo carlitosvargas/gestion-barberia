@@ -158,9 +158,45 @@ const obtenerTurnosEmpresaPublico = async (req, res) => {
   }
 };
 
+// Verificar si un cliente existe por su teléfono y tiene turnos en la empresa especificada
+const verificarCliente = async (req, res) => {
+  const { telefono, empresaId } = req.query;
+
+  if (!telefono || !empresaId) {
+    return res.status(400).json({ mensaje: 'Teléfono y empresaId son requeridos' });
+  }
+
+  try {
+    const cliente = await prisma.cliente.findFirst({
+      where: {
+        telefono: telefono.trim(),
+        turnos: {
+          some: {
+            empresaId: parseInt(empresaId)
+          }
+        }
+      }
+    });
+
+    if (cliente) {
+      return res.json({
+        existe: true,
+        nombre: cliente.nombre,
+        apellido: cliente.apellido,
+        email: cliente.email || ''
+      });
+    }
+
+    res.json({ existe: false });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al verificar el cliente', error: error.message });
+  }
+};
+
 module.exports = {
   obtenerTurnosEmpresa,
   crearTurno,
   actualizarEstadoTurno,
-  obtenerTurnosEmpresaPublico
+  obtenerTurnosEmpresaPublico,
+  verificarCliente
 };

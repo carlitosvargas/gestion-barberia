@@ -58,3 +58,46 @@ body {
   -webkit-text-fill-color: transparent;
   font-weight: 800;
 }
+
+/* Clases de diseño responsivo para la página de reservas */
+.reserva-page {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.responsive-grid-step-a {
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr;
+  gap: 2.5rem;
+}
+
+.responsive-grid-step-b {
+  display: grid;
+  grid-template-columns: 1.8fr 1.2fr;
+  gap: 2.5rem;
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .reserva-page {
+    padding: 2rem 1rem;
+  }
+  .responsive-grid-step-a,
+  .responsive-grid-step-b {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row-2col {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+}

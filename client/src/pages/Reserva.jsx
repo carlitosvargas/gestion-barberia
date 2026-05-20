@@ -37,6 +37,10 @@ export default function Reserva() {
     email: ''
   });
 
+  const [clienteVerificado, setClienteVerificado] = useState(false);
+  const [cargandoVerificacion, setCargandoVerificacion] = useState(false);
+  const [camposBloqueados, setCamposBloqueados] = useState(false);
+
   const [reservaExitosa, setReservaExitosa] = useState(false);
   const [detalleReservaCreada, setDetalleReservaCreada] = useState(null);
 
@@ -82,6 +86,14 @@ export default function Reserva() {
     setServicioSeleccionado(servicio);
     setSlotSeleccionado('');
     setMostrarFormularioDatos(false);
+    setClienteVerificado(false);
+    setCamposBloqueados(false);
+    setFormCliente({
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      email: ''
+    });
 
     // Asegurarse de que la fecha seleccionada por defecto no sea pasada
     const hoy = new Date();
@@ -89,6 +101,43 @@ export default function Reserva() {
     if (fechaSeleccionada < hoy) {
       setFechaSeleccionada(new Date());
       setMesActual(new Date());
+    }
+  };
+
+  const handleVerificarTelefono = async (e) => {
+    e.preventDefault();
+    if (!formCliente.telefono || formCliente.telefono.trim() === '') {
+      return alerts.error('Teléfono requerido', 'Por favor, ingresa tu número de teléfono.');
+    }
+
+    setCargandoVerificacion(true);
+    try {
+      const res = await publicService.verificarCliente(formCliente.telefono, empresaSeleccionada.id);
+      if (res.existe) {
+        setFormCliente(prev => ({
+          ...prev,
+          nombre: res.nombre,
+          apellido: res.apellido,
+          email: res.email || ''
+        }));
+        setCamposBloqueados(true);
+        alerts.toast('¡Tus datos fueron cargados con éxito!', 'success');
+      } else {
+        setFormCliente(prev => ({
+          ...prev,
+          nombre: '',
+          apellido: '',
+          email: ''
+        }));
+        setCamposBloqueados(false);
+        alerts.toast('Cliente nuevo detectado', 'info');
+      }
+      setClienteVerificado(true);
+    } catch (err) {
+      console.error(err);
+      alerts.error('Error de verificación', 'No se pudo comprobar el número de teléfono.');
+    } finally {
+      setCargandoVerificacion(false);
     }
   };
 
@@ -321,7 +370,7 @@ export default function Reserva() {
   // VISTA 1: Lista de todas las empresas disponibles
   if (empresaId === 'todas') {
     return (
-      <div className="reserva-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="reserva-page">
         <header style={{ marginBottom: '3rem', position: 'relative' }}>
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
             <ArrowLeft size={16} /> Volver al Inicio
@@ -337,7 +386,7 @@ export default function Reserva() {
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Actualmente no hay sucursales registradas en la plataforma.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '2rem' }}>
             {empresas.map(emp => (
               <div key={emp.id} className="glass-card card-hover" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '320px', transition: 'all 0.3s ease' }}>
                 <div>
@@ -399,7 +448,7 @@ export default function Reserva() {
   // VISTA 3: Flujo de selección de Día y Hora o Completar Datos
   if (servicioSeleccionado) {
     return (
-      <div className="reserva-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="reserva-page">
         <header style={{ marginBottom: '3rem' }}>
           <button
             onClick={() => {
@@ -428,7 +477,7 @@ export default function Reserva() {
 
         {!mostrarFormularioDatos ? (
           /* PASO A: CALENDARIO Y HORA */
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '2.5rem', flexWrap: 'wrap' }}>
+          <div className="responsive-grid-step-a">
 
             {/* LADO IZQUIERDO: CALENDARIO CLIENTE */}
             <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -551,78 +600,140 @@ export default function Reserva() {
           </div>
         ) : (
           /* PASO B: FORMULARIO DE RESERVA CLIENTE */
-          <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '2.5rem', flexWrap: 'wrap' }}>
+          <div className="responsive-grid-step-b">
 
             {/* LADO IZQUIERDO: FORMULARIO */}
             <div className="glass-card" style={{ padding: '2.5rem' }}>
-              <h2 className="heading-gold" style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>DATOS PERSONALES</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.9rem' }}>Por favor, completa tus datos para que la barbería pueda registrar tu reserva y contactarte si es necesario.</p>
+              {!clienteVerificado ? (
+                <>
+                  <h2 className="heading-gold" style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>VERIFICAR TELÉFONO</h2>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.9rem' }}>Por favor, ingresa tu número de teléfono celular para continuar con la reserva.</p>
 
-              <form onSubmit={handleConfirmarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre</label>
-                    <input
-                      placeholder="Ej: Juan"
-                      value={formCliente.nombre}
-                      onChange={e => setFormCliente({ ...formCliente, nombre: e.target.value })}
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
-                      required
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Apellido</label>
-                    <input
-                      placeholder="Ej: Pérez"
-                      value={formCliente.apellido}
-                      onChange={e => setFormCliente({ ...formCliente, apellido: e.target.value })}
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
-                      required
-                    />
-                  </div>
-                </div>
+                  <form onSubmit={handleVerificarTelefono} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Teléfono Celular</label>
+                      <input
+                        placeholder="Ej: +54 9 11..."
+                        value={formCliente.telefono}
+                        onChange={e => setFormCliente({ ...formCliente, telefono: e.target.value })}
+                        style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
+                        required
+                      />
+                    </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Teléfono Celular</label>
-                    <input
-                      placeholder="Ej: +54 9 11..."
-                      value={formCliente.telefono}
-                      onChange={e => setFormCliente({ ...formCliente, telefono: e.target.value })}
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
-                      required
-                    />
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={cargandoVerificacion}
+                      style={{ width: '100%', padding: '0.9rem', marginTop: '1.5rem', fontWeight: 'bold', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      {cargandoVerificacion ? (
+                        <>
+                          <div className="spinner" style={{ width: '18px', height: '18px', border: '2px solid transparent', borderTopColor: 'black', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Verificando...
+                        </>
+                      ) : (
+                        <>
+                          Continuar <ChevronRight size={18} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h2 className="heading-gold" style={{ fontSize: '1.8rem', margin: 0 }}>DATOS PERSONALES</h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClienteVerificado(false);
+                        setCamposBloqueados(false);
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 'bold', padding: 0 }}
+                    >
+                      <ArrowLeft size={14} /> Cambiar Teléfono
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Correo Electrónico (Opcional)</label>
-                    <input
-                      placeholder="juanperez@ejemplo.com"
-                      type="email"
-                      value={formCliente.email}
-                      onChange={e => setFormCliente({ ...formCliente, email: e.target.value })}
-                      style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }}
-                    />
-                  </div>
-                </div>
 
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={cargandoConfirmar}
-                  style={{ width: '100%', padding: '0.9rem', marginTop: '1.5rem', fontWeight: 'bold', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                  {cargandoConfirmar ? (
-                    <>
-                      <div className="spinner" style={{ width: '18px', height: '18px', border: '2px solid transparent', borderTopColor: 'black', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                      Agendando cita...
-                    </>
+                  {camposBloqueados ? (
+                    <p style={{ color: '#2ecc71', marginBottom: '2.5rem', fontSize: '0.85rem', background: 'rgba(46, 204, 113, 0.05)', padding: '0.8rem 1rem', borderRadius: '8px', border: '1px solid rgba(46, 204, 113, 0.15)' }}>
+                      ✓ Hemos encontrado tus datos asociados a este número de teléfono. Están completados y no se pueden modificar. Si hay algún error, puedes cambiar el teléfono arriba.
+                    </p>
                   ) : (
-                    <>
-                      <Check size={18} /> Confirmar Mi Turno
-                    </>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.9rem' }}>
+                      Es tu primera vez reservando en esta sucursal. Por favor, completa tus datos para finalizar.
+                    </p>
                   )}
-                </button>
-              </form>
+
+                  <form onSubmit={handleConfirmarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="form-row-2col">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre</label>
+                        <input
+                          placeholder="Ej: Juan"
+                          value={formCliente.nombre}
+                          onChange={e => setFormCliente({ ...formCliente, nombre: e.target.value })}
+                          style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', opacity: camposBloqueados ? 0.6 : 1 }}
+                          required
+                          disabled={camposBloqueados}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Apellido</label>
+                        <input
+                          placeholder="Ej: Pérez"
+                          value={formCliente.apellido}
+                          onChange={e => setFormCliente({ ...formCliente, apellido: e.target.value })}
+                          style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', opacity: camposBloqueados ? 0.6 : 1 }}
+                          required
+                          disabled={camposBloqueados}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row-2col">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Teléfono Celular</label>
+                        <input
+                          value={formCliente.telefono}
+                          style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', opacity: 0.6 }}
+                          disabled
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Correo Electrónico (Opcional)</label>
+                        <input
+                          placeholder="juanperez@ejemplo.com"
+                          type="email"
+                          value={formCliente.email}
+                          onChange={e => setFormCliente({ ...formCliente, email: e.target.value })}
+                          style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.8rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', opacity: camposBloqueados ? 0.6 : 1 }}
+                          disabled={camposBloqueados}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={cargandoConfirmar}
+                      style={{ width: '100%', padding: '0.9rem', marginTop: '1.5rem', fontWeight: 'bold', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      {cargandoConfirmar ? (
+                        <>
+                          <div className="spinner" style={{ width: '18px', height: '18px', border: '2px solid transparent', borderTopColor: 'black', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Agendando cita...
+                        </>
+                      ) : (
+                        <>
+                          <Check size={18} /> Confirmar Mi Turno
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
 
             {/* LADO DERECHO: DETALLE DEL TURNO RESUMIDO */}
@@ -668,7 +779,7 @@ export default function Reserva() {
 
   // VISTA 2: Detalle de empresa seleccionada y sus servicios asociados
   return (
-    <div className="reserva-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="reserva-page">
       <header style={{ marginBottom: '3rem' }}>
         <button
           onClick={() => navigate('/reserva/todas')}

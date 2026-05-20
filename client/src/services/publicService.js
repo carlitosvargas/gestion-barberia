@@ -23,6 +23,14 @@ const publicService = {
   crearTurno: async (datos) => {
     const res = await api.post('/turnos', datos);
     return res.data;
+  },
+
+  // Verificar si un cliente existe por su teléfono en esta empresa
+  verificarCliente: async (telefono, empresaId) => {
+    const res = await api.get('/turnos/verificar-cliente', {
+      params: { telefono, empresaId }
+    });
+    return res.data;
   }
 };
 
