@@ -17,7 +17,7 @@ const Login = () => {
     setCargando(true);
 
     try {
-      const respuesta = await axios.post('http://localhost:3001/api/auth/login', {
+      const respuesta = await axios.post('https://gestion-backend-cv.vercel.app/api/auth/login', {
         email,
         password
       });

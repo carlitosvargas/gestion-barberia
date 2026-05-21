@@ -7,6 +7,7 @@ async function main() {
   const password = 'admin123';
   const nombre = 'Carlos';
   const apellido = 'Vargas';
+  const telefono = '3794404617';
 
   const passwordHasheada = await bcrypt.hash(password, 10);
 
@@ -15,6 +16,7 @@ async function main() {
       data: {
         nombre,
         apellido,
+        telefono,
         email,
         password: passwordHasheada,
         rol: 'SUPER_ADMIN',
@@ -25,6 +27,7 @@ async function main() {
     console.log(`👤 Nombre: ${admin.nombre} ${admin.apellido}`);
     console.log(`📧 Email: ${admin.email}`);
     console.log(`🔑 Password: ${password}`);
+    console.log(`📱 Teléfono: ${admin.telefono}`);
     console.log('-----------------------------------------');
   } catch (error) {
     if (error.code === 'P2002') {

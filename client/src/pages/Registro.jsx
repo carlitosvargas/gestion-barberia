@@ -31,7 +31,7 @@ const Registro = () => {
     setCargando(true);
 
     try {
-      await axios.post('http://localhost:3001/api/auth/registro', {
+      await axios.post('https://gestion-backend-cv.vercel.app/api/auth/registro', {
         nombre: formData.nombre,
         apellido: formData.apellido,
         telefono: formData.telefono,

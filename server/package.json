@@ -4,8 +4,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "seed:admin": "node src/utils/createAdmin.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "seed:admin": "node src/utils/createAdmin.js"
+  },
+  "engines": {
+    "node": "20.x"
   },
   "keywords": [],
   "author": "",
