@@ -10,6 +10,10 @@ const adminService = {
     const res = await api.post('/empresas', datos);
     return res.data;
   },
+  eliminarEmpresa: async (id) => {
+    const res = await api.delete(`/empresas/${id}`);
+    return res.data;
+  },
   
   // Gestión de Usuarios
   obtenerUsuariosSinEmpresa: async () => {

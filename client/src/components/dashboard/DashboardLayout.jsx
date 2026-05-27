@@ -20,43 +20,14 @@ export const DashboardLayout = ({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        background: '#0a0a0c'
-      }}
-    >
+    <div className="dashboard-container">
 
       {/* ================================================= */}
       {/* MODIFICACIÓN: BOTÓN HAMBURGUESA */}
       {/* ================================================= */}
       <button
+        className="hamburger-btn"
         onClick={() => setMenuOpen(!menuOpen)}
-        style={{
-          position: 'fixed',
-
-          // <-- MODIFICACIÓN: separado del borde
-          top: '20px',
-          left: '20px',
-
-          zIndex: 3000,
-          background: 'var(--glass)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '12px',
-          padding: '0.7rem',
-          color: 'white',
-          cursor: 'pointer',
-          backdropFilter: 'blur(10px)',
-
-          // <-- MODIFICACIÓN: tamaño fijo
-          width: '52px',
-          height: '52px',
-
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
       >
         {menuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
@@ -66,46 +37,21 @@ export const DashboardLayout = ({
       {/* ================================================= */}
       {menuOpen && (
         <div
+          className="dashboard-overlay"
           onClick={() => setMenuOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            zIndex: 999
-          }}
         />
       )}
 
       {/* ================================================= */}
       {/* SIDEBAR */}
       {/* ================================================= */}
-      <aside
-        style={{
-          width: '280px',
-          background: '#111315',
-          borderRight: '1px solid var(--glass-border)',
-          padding: '2rem',
-          display: 'flex',
-          flexDirection: 'column',
-
-          // <-- MODIFICACIÓN: sidebar fijo
-          position: 'fixed',
-          top: 0,
-
-          // <-- MODIFICACIÓN: se mueve suavemente
-          left: menuOpen ? '0' : '-280px',
-
-          height: '100vh',
-          transition: 'left 0.3s ease',
-          zIndex: 1500
-        }}
-      >
+      <aside className={`dashboard-sidebar ${menuOpen ? 'open' : ''}`}>
 
         {/* ================================================= */}
         {/* MODIFICACIÓN: espacio arriba para que la X
             no tape el título */}
         {/* ================================================= */}
-        <div style={{ marginTop: '4rem' }}>
+        <div className="sidebar-logo-container">
 
           {/* Logo */}
           {empresa?.logo ? (
@@ -134,7 +80,7 @@ export const DashboardLayout = ({
             <h2
               className="heading-gold"
               style={{
-                marginBottom: '3rem',
+                marginBottom: '2rem',
                 fontSize: '1.5rem',
                 textAlign: 'center'
               }}
@@ -199,7 +145,10 @@ export const DashboardLayout = ({
                 style={{
                   fontSize: '0.9rem',
                   fontWeight: 'bold',
-                  color: 'white'
+                  color: 'white',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {usuario.nombre} {usuario.apellido}
@@ -223,35 +172,8 @@ export const DashboardLayout = ({
       {/* ================================================= */}
       {/* MAIN */}
       {/* ================================================= */}
-      <main
-        style={{
-          flex: 1,
-          padding: '3rem',
-          overflowY: 'auto',
-          width: '100%',
-
-          // =================================================
-          // MODIFICACIÓN:
-          // cuando el menú se abre el contenido se corre
-          // y NO queda tapado
-          // =================================================
-          marginLeft: menuOpen ? '280px' : '0',
-
-          transition: 'margin-left 0.3s ease'
-        }}
-      >
-        <header
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-
-            // <-- MODIFICACIÓN: espacio superior
-            paddingTop: '3rem',
-
-            marginBottom: '3rem'
-          }}
-        >
+      <main className="dashboard-main">
+        <header className="dashboard-header">
           <div>
             <h1
               style={{
@@ -267,7 +189,9 @@ export const DashboardLayout = ({
             </p>
           </div>
 
-          {accionesExtra}
+          <div className="dashboard-header-actions">
+            {accionesExtra}
+          </div>
         </header>
 
         {children}

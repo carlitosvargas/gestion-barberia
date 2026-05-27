@@ -679,19 +679,19 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
       )}
 
       {seccion === 'configuracion' && (
-        <div className="glass-card" style={{ padding: '2.5rem', maxWidth: '700px' }}>
+        <div className="glass-card" style={{ padding: window.innerWidth < 768 ? '1.2rem' : '2.5rem', maxWidth: '700px' }}>
           <h3 style={{ marginBottom: '0.5rem' }}>Perfil de la Empresa</h3>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>Esta información será visible para tus clientes al momento de reservar.</p>
 
           <form onSubmit={handleUpdateEmpresa} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
               <div style={inputGroupStyle}>
                 <label style={labelStyle}>Nombre Comercial</label>
                 <input
                   style={modalStyles.input}
                   value={formEmpresa.nombre}
                   onChange={e => setFormEmpresa({ ...formEmpresa, nombre: e.target.value })}
-                  placeholder="Ej: Barbería Vargas"
+                  placeholder="Ej: Barberia Don"
                   required
                 />
               </div>
@@ -706,7 +706,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
               <div style={inputGroupStyle}>
                 <label style={labelStyle}>Días de Atención</label>
                 <input
@@ -1052,203 +1052,203 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                   paddingRight: '0.5rem'
                 }}
               >
-            {turnos
-              .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
-              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-              .length === 0 ? (
-              <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
-                <Calendar size={40} color="var(--primary)" style={{ opacity: 0.4, marginBottom: '1rem' }} />
-                <h4>No se encontraron turnos</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>No hay registros correspondientes al filtro seleccionado.</p>
-              </div>
-            ) : (
-              turnos
-                .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
-                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-                .map(turno => {
-                  const fechaObj = new Date(turno.fecha);
-                  const horaStr = `${String(fechaObj.getHours()).padStart(2, '0')}:${String(fechaObj.getMinutes()).padStart(2, '0')}`;
-                  const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  });
+                {turnos
+                  .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
+                  .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                  .length === 0 ? (
+                  <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
+                    <Calendar size={40} color="var(--primary)" style={{ opacity: 0.4, marginBottom: '1rem' }} />
+                    <h4>No se encontraron turnos</h4>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>No hay registros correspondientes al filtro seleccionado.</p>
+                  </div>
+                ) : (
+                  turnos
+                    .filter(t => filtroEstado === 'TODOS' || t.estado === filtroEstado)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                    .map(turno => {
+                      const fechaObj = new Date(turno.fecha);
+                      const horaStr = `${String(fechaObj.getHours()).padStart(2, '0')}:${String(fechaObj.getMinutes()).padStart(2, '0')}`;
+                      const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      });
 
-                  // Colores de estado
-                  let colorEstado = '#f1c40f'; // Pendiente
-                  let bgEstado = 'rgba(241, 196, 15, 0.1)';
-                  if (turno.estado === 'CONFIRMADO') {
-                    colorEstado = '#3498db';
-                    bgEstado = 'rgba(52, 152, 219, 0.1)';
-                  } else if (turno.estado === 'COMPLETADO') {
-                    colorEstado = '#2ecc71';
-                    bgEstado = 'rgba(46, 204, 113, 0.1)';
-                  } else if (turno.estado === 'CANCELADO') {
-                    colorEstado = '#e74c3c';
-                    bgEstado = 'rgba(231, 76, 60, 0.1)';
-                  }
+                      // Colores de estado
+                      let colorEstado = '#f1c40f'; // Pendiente
+                      let bgEstado = 'rgba(241, 196, 15, 0.1)';
+                      if (turno.estado === 'CONFIRMADO') {
+                        colorEstado = '#3498db';
+                        bgEstado = 'rgba(52, 152, 219, 0.1)';
+                      } else if (turno.estado === 'COMPLETADO') {
+                        colorEstado = '#2ecc71';
+                        bgEstado = 'rgba(46, 204, 113, 0.1)';
+                      } else if (turno.estado === 'CANCELADO') {
+                        colorEstado = '#e74c3c';
+                        bgEstado = 'rgba(231, 76, 60, 0.1)';
+                      }
 
-                  // Iniciales del cliente para el avatar circular
-                  const iniciales = `${turno.cliente?.nombre?.[0] || 'C'}${turno.cliente?.apellido?.[0] || ''}`.toUpperCase();
+                      // Iniciales del cliente para el avatar circular
+                      const iniciales = `${turno.cliente?.nombre?.[0] || 'C'}${turno.cliente?.apellido?.[0] || ''}`.toUpperCase();
 
-                  return (
-                    <div
-                      key={turno.id}
-                      className="glass-card"
-                      style={{
-                        padding: '1.5rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '1.5rem',
-                        flexWrap: 'wrap',
-                        borderLeft: `3px solid ${colorEstado}`,
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      {/* DATOS DEL TURNO Y SERVICIO */}
-                      <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', minWidth: '280px', flex: '1' }}>
+                      return (
+                        <div
+                          key={turno.id}
+                          className="glass-card"
+                          style={{
+                            padding: '1.5rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '1.5rem',
+                            flexWrap: 'wrap',
+                            borderLeft: `3px solid ${colorEstado}`,
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {/* DATOS DEL TURNO Y SERVICIO */}
+                          <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', minWidth: '280px', flex: '1' }}>
 
-                        {/* Avatar del Cliente */}
-                        <div style={{
-                          width: '45px',
-                          height: '45px',
-                          borderRadius: '50%',
-                          background: bgEstado,
-                          border: `1px solid ${colorEstado}33`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          color: colorEstado,
-                          fontSize: '0.95rem'
-                        }}>
-                          {iniciales}
-                        </div>
-
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>
-                              {turno.cliente?.nombre || 'Cliente'} {turno.cliente?.apellido || ''}
-                            </span>
-                            <span style={{
-                              fontSize: '0.75rem',
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: '12px',
-                              color: colorEstado,
+                            {/* Avatar del Cliente */}
+                            <div style={{
+                              width: '45px',
+                              height: '45px',
+                              borderRadius: '50%',
                               background: bgEstado,
+                              border: `1px solid ${colorEstado}33`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                               fontWeight: 'bold',
-                              letterSpacing: '0.5px'
+                              color: colorEstado,
+                              fontSize: '0.95rem'
                             }}>
-                              {turno.estado}
-                            </span>
+                              {iniciales}
+                            </div>
+
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>
+                                  {turno.cliente?.nombre || 'Cliente'} {turno.cliente?.apellido || ''}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.2rem 0.6rem',
+                                  borderRadius: '12px',
+                                  color: colorEstado,
+                                  background: bgEstado,
+                                  fontWeight: 'bold',
+                                  letterSpacing: '0.5px'
+                                }}>
+                                  {turno.estado}
+                                </span>
+                              </div>
+
+                              <p style={{ fontSize: '0.9rem', color: 'var(--primary)', marginTop: '0.3rem', fontWeight: '500' }}>
+                                ✂️ {turno.servicio?.nombre || 'Servicio'} — <strong style={{ color: 'white' }}>${turno.servicio?.precio || 0}</strong>
+                              </p>
+
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                📅 <span style={{ textTransform: 'capitalize' }}>{fechaFormateada}</span> a las <strong>{horaStr} hs</strong>
+                              </p>
+                            </div>
                           </div>
 
-                          <p style={{ fontSize: '0.9rem', color: 'var(--primary)', marginTop: '0.3rem', fontWeight: '500' }}>
-                            ✂️ {turno.servicio?.nombre || 'Servicio'} — <strong style={{ color: 'white' }}>${turno.servicio?.precio || 0}</strong>
-                          </p>
+                          {/* DATOS DE CONTACTO DEL CLIENTE */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '220px' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              📱 {turno.cliente?.telefono || 'Sin teléfono'}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', wordBreak: 'break-all' }}>
+                              ✉️ {turno.cliente?.email || 'Sin email registrado'}
+                            </span>
 
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                            📅 <span style={{ textTransform: 'capitalize' }}>{fechaFormateada}</span> a las <strong>{horaStr} hs</strong>
-                          </p>
+                            {/* BOTONES DIRECTOS DE WHATSAPP / LLAMADA */}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+                              {turno.cliente?.telefono && (
+                                <>
+                                  <a
+                                    href={`https://wa.me/${turno.cliente.telefono.replace(/[^0-9]/g, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-primary"
+                                    style={{
+                                      padding: '0.35rem 0.75rem',
+                                      fontSize: '0.75rem',
+                                      borderRadius: '6px',
+                                      textDecoration: 'none',
+                                      background: '#25d366',
+                                      borderColor: '#25d366',
+                                      color: 'black',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.3rem',
+                                      fontWeight: 'bold'
+                                    }}
+                                  >
+                                    WhatsApp
+                                  </a>
+
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* ACCIONES DE ESTADO RÁPIDAS */}
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {turno.estado === 'PENDIENTE' && (
+                              <>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turno.id, 'CONFIRMADO')}
+                                  className="btn-primary"
+                                  style={{ padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                >
+                                  Confirmar
+                                </button>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
+                                  style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  Finalizar
+                                </button>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
+                                  style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            )}
+
+                            {turno.estado === 'CONFIRMADO' && (
+                              <>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
+                                  style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  Finalizar
+                                </button>
+                                <button
+                                  onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
+                                  style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            )}
+                          </div>
+
                         </div>
-                      </div>
+                      );
+                    })
+                )}
+              </div>
 
-                      {/* DATOS DE CONTACTO DEL CLIENTE */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '220px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          📱 {turno.cliente?.telefono || 'Sin teléfono'}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', wordBreak: 'break-all' }}>
-                          ✉️ {turno.cliente?.email || 'Sin email registrado'}
-                        </span>
-
-                        {/* BOTONES DIRECTOS DE WHATSAPP / LLAMADA */}
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                          {turno.cliente?.telefono && (
-                            <>
-                              <a
-                                href={`https://wa.me/${turno.cliente.telefono.replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn-primary"
-                                style={{
-                                  padding: '0.35rem 0.75rem',
-                                  fontSize: '0.75rem',
-                                  borderRadius: '6px',
-                                  textDecoration: 'none',
-                                  background: '#25d366',
-                                  borderColor: '#25d366',
-                                  color: 'black',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
-                                  fontWeight: 'bold'
-                                }}
-                              >
-                                WhatsApp
-                              </a>
-
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ACCIONES DE ESTADO RÁPIDAS */}
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {turno.estado === 'PENDIENTE' && (
-                          <>
-                            <button
-                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CONFIRMADO')}
-                              className="btn-primary"
-                              style={{ padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold' }}
-                            >
-                              Confirmar
-                            </button>
-                            <button
-                              onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
-                              style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              Finalizar
-                            </button>
-                            <button
-                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
-                              style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              Cancelar
-                            </button>
-                          </>
-                        )}
-
-                        {turno.estado === 'CONFIRMADO' && (
-                          <>
-                            <button
-                              onClick={() => handleCambiarEstadoTurno(turno.id, 'COMPLETADO')}
-                              style={{ background: '#2ecc71', border: '1px solid #2ecc71', color: 'black', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              Finalizar
-                            </button>
-                            <button
-                              onClick={() => handleCambiarEstadoTurno(turno.id, 'CANCELADO')}
-                              style={{ background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '0.5rem 0.8rem', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              Cancelar
-                            </button>
-                          </>
-                        )}
-                      </div>
-
-                    </div>
-                  );
-                })
-            )}
+            </div>
           </div>
-
         </div>
-      </div>
-    </div>
-  )}
+      )}
 
       {/* MODAL NUEVO SERVICIO */}
       {mostrarModalServicio && (

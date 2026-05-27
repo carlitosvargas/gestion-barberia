@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import adminService from '../../services/adminService';
 import { DashboardLayout, NavItem, modalStyles } from '../../components/dashboard/DashboardLayout';
-import { LayoutDashboard, Users, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Trash2 } from 'lucide-react';
 import alerts from '../../utils/alerts';
 
 const AdminPanel = ({ usuario, logout, navigate }) => {
@@ -64,6 +64,23 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
     }
   };
 
+  const handleEliminarEmpresa = async (id) => {
+    const result = await alerts.confirm(
+      '¿Eliminar Sucursal?',
+      'Se eliminarán todos los turnos, servicios y dueños asociados a esta sucursal. Esta acción es irreversible.'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.eliminarEmpresa(id);
+        alerts.toast('Sucursal eliminada', 'success');
+        cargarDatos();
+      } catch (err) {
+        alerts.error('Error', err.response?.data?.mensaje || 'No se pudo eliminar la sucursal');
+      }
+    }
+  };
+
   const sidebarItems = (
     <>
       <NavItem active={true} icon={<LayoutDashboard size={20} />} label="Empresas" />
@@ -89,12 +106,21 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>📍 {empresa.direccion || 'Sin dirección'}</p>
             {empresa.dias && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>📅 {empresa.dias}</p>}
             {empresa.horarios && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>🕒 {empresa.horarios}</p>}
-            <button
-              onClick={() => { setEmpresaSeleccionada(empresa); setMostrarModalAsignar(true); }}
-              style={{ marginTop: '1.5rem', width: '100%', padding: '0.6rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'black', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-            >
-              <Users size={16} /> Asignar Dueño
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => { setEmpresaSeleccionada(empresa); setMostrarModalAsignar(true); }}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'black', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <Users size={16} /> Asignar Dueño
+              </button>
+              <button
+                onClick={() => handleEliminarEmpresa(empresa.id)}
+                style={{ padding: '0.6rem', background: 'rgba(255, 77, 77, 0.1)', border: '1px solid rgba(255, 77, 77, 0.3)', borderRadius: '8px', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Eliminar Sucursal"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

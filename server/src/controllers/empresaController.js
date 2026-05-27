@@ -87,5 +87,31 @@ const actualizarEmpresa = async (req, res) => {
     res.status(500).json({ mensaje: 'Error al actualizar empresa', error: error.message });
   }
 };
+const eliminarEmpresa = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const empresaIdInt = parseInt(id);
 
-module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, actualizarEmpresa };
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: empresaIdInt }
+    });
+
+    if (!empresa) {
+      return res.status(404).json({ mensaje: 'Empresa no encontrada' });
+    }
+
+    // Transacción para borrar los registros dependientes y luego la empresa
+    await prisma.$transaction([
+      prisma.turno.deleteMany({ where: { empresaId: empresaIdInt } }),
+      prisma.servicio.deleteMany({ where: { empresaId: empresaIdInt } }),
+      prisma.usuario.deleteMany({ where: { empresaId: empresaIdInt } }),
+      prisma.empresa.delete({ where: { id: empresaIdInt } })
+    ]);
+
+    res.json({ mensaje: 'Empresa eliminada exitosamente' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al eliminar empresa', error: error.message });
+  }
+};
+
+module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, actualizarEmpresa, eliminarEmpresa };

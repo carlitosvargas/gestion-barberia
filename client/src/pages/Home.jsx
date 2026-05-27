@@ -4,10 +4,10 @@ import { Scissors, Calendar, ShieldCheck } from 'lucide-react';
 
 const Home = () => {
   return (
-    <div className="home-page" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ textAlign: 'center', marginBottom: '4rem' }}>
-        <h1 className="heading-gold" style={{ fontSize: '4rem', marginBottom: '1rem' }}>Gestiones en línea CV</h1>
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>La gestión definitiva para tu empresa</p>
+    <div className="reserva-page">
+      <header className="hero-header">
+        <h1 className="heading-gold hero-title">Gestiones en línea CV</h1>
+        <p className="hero-subtitle">La gestión definitiva para tu empresa</p>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', justifyContent: 'center', maxWidth: '800px', margin: '0 auto' }}>
