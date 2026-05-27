@@ -1,4 +1,4 @@
-const multer = require('multer');
+/*const multer = require('multer');
 const path = require('path');
 
 // Configuración de almacenamiento
@@ -28,5 +28,22 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // Limitar a 5MB por seguridad
   }
 });
+
+module.exports = upload;
+*/
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'barberia',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+  }
+});
+
+const upload = multer({ storage });
 
 module.exports = upload;

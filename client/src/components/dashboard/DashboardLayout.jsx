@@ -1,4 +1,6 @@
-import React, { useState } from 'react'; // <-- MODIFICACIÓN: se agregó useState
+import React, { useState } from 'react';
+// <-- MODIFICACIÓN: se agregó useState
+
 import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 // <-- MODIFICACIÓN: se agregaron Menu y X
 
@@ -14,50 +16,69 @@ export const DashboardLayout = ({
   empresa
 }) => {
 
-  // <-- MODIFICACIÓN: estado para abrir/cerrar menú hamburguesa
+  // <-- MODIFICACIÓN: estado menú hamburguesa
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0c' }}>
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        background: '#0a0a0c'
+      }}
+    >
 
-      {/* ========================= */}
+      {/* ================================================= */}
       {/* MODIFICACIÓN: BOTÓN HAMBURGUESA */}
-      {/* ========================= */}
+      {/* ================================================= */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         style={{
           position: 'fixed',
+
+          // <-- MODIFICACIÓN: separado del borde
           top: '20px',
           left: '20px',
-          zIndex: 2000,
+
+          zIndex: 3000,
           background: 'var(--glass)',
           border: '1px solid var(--glass-border)',
           borderRadius: '12px',
           padding: '0.7rem',
           color: 'white',
           cursor: 'pointer',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(10px)',
+
+          // <-- MODIFICACIÓN: tamaño fijo
+          width: '52px',
+          height: '52px',
+
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
         {menuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* ========================= */}
-      {/* MODIFICACIÓN: OVERLAY OSCURO */}
-      {/* ========================= */}
+      {/* ================================================= */}
+      {/* MODIFICACIÓN: OVERLAY */}
+      {/* ================================================= */}
       {menuOpen && (
         <div
           onClick={() => setMenuOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.45)',
             zIndex: 999
           }}
         />
       )}
 
-      {/* Sidebar */}
+      {/* ================================================= */}
+      {/* SIDEBAR */}
+      {/* ================================================= */}
       <aside
         style={{
           width: '280px',
@@ -67,12 +88,12 @@ export const DashboardLayout = ({
           display: 'flex',
           flexDirection: 'column',
 
-          // <-- MODIFICACIÓN: sidebar flotante
+          // <-- MODIFICACIÓN: sidebar fijo
           position: 'fixed',
           top: 0,
 
-          // <-- MODIFICACIÓN: animación abrir/cerrar
-          left: menuOpen ? '0' : '-300px',
+          // <-- MODIFICACIÓN: se mueve suavemente
+          left: menuOpen ? '0' : '-280px',
 
           height: '100vh',
           transition: 'left 0.3s ease',
@@ -80,41 +101,48 @@ export const DashboardLayout = ({
         }}
       >
 
-        {/* Logo */}
-        {empresa?.logo ? (
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              margin: '0 auto 2rem auto',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              border: '2px solid var(--primary)',
-              boxShadow: '0 0 15px rgba(201, 160, 99, 0.3)'
-            }}
-          >
-            <img
-              src={empresa.logo}
-              alt="Logo"
+        {/* ================================================= */}
+        {/* MODIFICACIÓN: espacio arriba para que la X
+            no tape el título */}
+        {/* ================================================= */}
+        <div style={{ marginTop: '4rem' }}>
+
+          {/* Logo */}
+          {empresa?.logo ? (
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
+                width: '80px',
+                height: '80px',
+                margin: '0 auto 2rem auto',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid var(--primary)',
+                boxShadow: '0 0 15px rgba(201, 160, 99, 0.3)'
               }}
-            />
-          </div>
-        ) : (
-          <h2
-            className="heading-gold"
-            style={{
-              marginBottom: '3rem',
-              fontSize: '1.5rem',
-              textAlign: 'center'
-            }}
-          >
-            PANEL GESTIÓN
-          </h2>
-        )}
+            >
+              <img
+                src={empresa.logo}
+                alt="Logo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </div>
+          ) : (
+            <h2
+              className="heading-gold"
+              style={{
+                marginBottom: '3rem',
+                fontSize: '1.5rem',
+                textAlign: 'center'
+              }}
+            >
+              PANEL GESTIÓN
+            </h2>
+          )}
+        </div>
 
         {/* Navegación */}
         <nav
@@ -126,9 +154,9 @@ export const DashboardLayout = ({
           }}
         >
 
-          {/* ========================= */}
+          {/* ================================================= */}
           {/* MODIFICACIÓN: cerrar menú al seleccionar opción */}
-          {/* ========================= */}
+          {/* ================================================= */}
           {React.Children.map(sidebarItems, (item) =>
             React.cloneElement(item, {
               onClick: () => {
@@ -192,7 +220,9 @@ export const DashboardLayout = ({
         </div>
       </aside>
 
-      {/* Main */}
+      {/* ================================================= */}
+      {/* MAIN */}
+      {/* ================================================= */}
       <main
         style={{
           flex: 1,
@@ -200,8 +230,14 @@ export const DashboardLayout = ({
           overflowY: 'auto',
           width: '100%',
 
-          // <-- MODIFICACIÓN: separación superior para botón hamburguesa
-          marginTop: '2rem'
+          // =================================================
+          // MODIFICACIÓN:
+          // cuando el menú se abre el contenido se corre
+          // y NO queda tapado
+          // =================================================
+          marginLeft: menuOpen ? '280px' : '0',
+
+          transition: 'margin-left 0.3s ease'
         }}
       >
         <header
@@ -209,11 +245,20 @@ export const DashboardLayout = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+
+            // <-- MODIFICACIÓN: espacio superior
+            paddingTop: '3rem',
+
             marginBottom: '3rem'
           }}
         >
           <div>
-            <h1 style={{ fontSize: '2rem', color: 'white' }}>
+            <h1
+              style={{
+                fontSize: '2rem',
+                color: 'white'
+              }}
+            >
               {titulo}
             </h1>
 
@@ -231,8 +276,15 @@ export const DashboardLayout = ({
   );
 };
 
+// =================================================
 // NavItem
-export const NavItem = ({ active, onClick, icon, label }) => (
+// =================================================
+export const NavItem = ({
+  active,
+  onClick,
+  icon,
+  label
+}) => (
   <div
     onClick={onClick}
     style={{

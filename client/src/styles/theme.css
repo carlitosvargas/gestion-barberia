@@ -9,7 +9,6 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
   --font-main: 'Outfit', sans-serif;
-  --sidebar-width: 280px;
 }
 
 * {
@@ -60,75 +59,67 @@ body {
   font-weight: 800;
 }
 
-/* ==============================================
-   LAYOUT RESPONSIVO: DASHBOARD (Sidebar + Main)
-   ============================================== */
+/* Dashboard Layout Responsive Classes */
+:root {
+  --sidebar-width: 280px;
+}
 
-.dashboard-wrapper {
+.dashboard-container {
   display: flex;
   min-height: 100vh;
   background: #0a0a0c;
 }
 
-.dashboard-sidebar {
+.dashboard-aside {
   width: var(--sidebar-width);
-  background: var(--glass);
+  background: #111315;
   border-right: 1px solid var(--glass-border);
   padding: 2rem;
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 0;
+  left: -var(--sidebar-width);
+  height: 100vh;
+  transition: left 0.3s ease;
+  z-index: 1500;
+}
+
+.dashboard-aside.open {
   left: 0;
-  bottom: 0;
-  z-index: 100;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
-}
-
-.dashboard-sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 99;
-}
-
-.dashboard-hamburger {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 101;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  padding: 0.6rem;
-  color: var(--primary);
-  cursor: pointer;
-  backdrop-filter: blur(12px);
 }
 
 .dashboard-main {
   flex: 1;
   padding: 3rem;
   overflow-y: auto;
-  margin-left: var(--sidebar-width);
+  width: 100%;
+  margin-left: 0;
+  transition: margin-left 0.3s ease;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-  gap: 1rem;
-  flex-wrap: wrap;
+/* Shift main content on larger screens when sidebar is open */
+@media (min-width: 768px) {
+  .dashboard-main.shift {
+    margin-left: var(--sidebar-width);
+  }
 }
 
-/* ==============================================
-   LAYOUT RESPONSIVO: PÁGINA DE RESERVAS
-   ============================================== */
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .dashboard-aside {
+    width: 100%;
+    left: -100%;
+  }
+  .dashboard-aside.open {
+    left: 0;
+  }
+  .dashboard-main {
+    padding: 2rem 1rem;
+  }
+}
 
+/* Clases de diseño responsivo para la página de reservas */
 .reserva-page {
   padding: 4rem 2rem;
   max-width: 1200px;
@@ -153,201 +144,20 @@ body {
   gap: 1.5rem;
 }
 
-/* ==============================================
-   LAYOUT RESPONSIVO: GRILLAS DEL DASHBOARD
-   ============================================== */
-
-.dashboard-grid-turnos {
-  display: grid;
-  grid-template-columns: 1.2fr 1.8fr;
-  gap: 2rem;
-}
-
-.dashboard-grid-config {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.dashboard-grid-reportes-2col {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  align-items: flex-start;
-}
-
-.dashboard-grid-modal-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-/* ==============================================
-   LAYOUT RESPONSIVO: HOME
-   ============================================== */
-
-.home-page {
-  padding: 4rem 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.home-title {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-/* ==============================================
-   LAYOUT RESPONSIVO: AUTH (Login / Registro)
-   ============================================== */
-
-.auth-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 2rem 1rem;
-}
-
-/* ==============================================
-   LAYOUT RESPONSIVO: MODALES
-   ============================================== */
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-content {
-  padding: 2.5rem;
-  width: 100%;
-  max-width: 500px;
-  background: #111315;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* ==============================================
-   MEDIA QUERIES
-   ============================================== */
-
-/* --- Tablets y pantallas medianas (max 900px) --- */
 @media (max-width: 900px) {
   .reserva-page {
     padding: 2rem 1rem;
   }
-
   .responsive-grid-step-a,
   .responsive-grid-step-b {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
-
-  .dashboard-grid-turnos {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .dashboard-grid-config {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-grid-reportes-2col {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-main {
-    padding: 2rem 1.2rem;
-  }
-
-  .home-page {
-    padding: 2.5rem 1.2rem;
-  }
-
-  .home-title {
-    font-size: 2.5rem;
-  }
-
-  .dashboard-header {
-    margin-bottom: 2rem;
-  }
 }
 
-/* --- Móviles y sidebar colapsado (max 768px) --- */
-@media (max-width: 768px) {
-  .dashboard-sidebar {
-    transform: translateX(-100%);
-  }
-
-  .dashboard-sidebar.sidebar-open {
-    transform: translateX(0);
-  }
-
-  .dashboard-sidebar-overlay.sidebar-open {
-    display: block;
-  }
-
-  .dashboard-hamburger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .dashboard-main {
-    margin-left: 0;
-    padding: 4.5rem 1rem 2rem;
-  }
-
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .modal-content {
-    padding: 1.8rem;
-    border-radius: 16px;
-  }
-
-  .home-title {
-    font-size: 2rem;
-  }
-}
-
-/* --- Móviles pequeños (max 600px) --- */
 @media (max-width: 600px) {
   .form-row-2col {
     grid-template-columns: 1fr;
     gap: 1.2rem;
-  }
-
-  .dashboard-grid-modal-2col {
-    grid-template-columns: 1fr;
-  }
-
-  .reserva-page {
-    padding: 1.5rem 0.8rem;
-  }
-
-  .home-page {
-    padding: 2rem 0.8rem;
-  }
-
-  .btn-primary {
-    padding: 10px 16px;
-    font-size: 0.85rem;
   }
 }
