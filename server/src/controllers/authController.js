@@ -48,6 +48,8 @@ const login = async (req, res) => {
   }
 };
 
+const { enviarEmailBienvenida } = require('../utils/mailer');
+
 const registro = async (req, res) => {
   try {
     const datosValidados = esquemaRegistro.parse(req.body);
@@ -71,9 +73,12 @@ const registro = async (req, res) => {
         empresaId: empresaId || null
       }
     });
+    
+    // Enviar el correo de verificación / bienvenida
+    await enviarEmailBienvenida(usuario.email, usuario.nombre);
 
     res.status(201).json({ 
-      mensaje: 'Usuario creado con éxito', 
+      mensaje: 'Usuario creado con éxito. Se ha enviado un correo de verificación.', 
       usuario: { id: usuario.id, email: usuario.email, nombre: usuario.nombre } 
     });
   } catch (error) {

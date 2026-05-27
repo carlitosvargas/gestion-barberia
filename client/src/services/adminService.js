@@ -16,12 +16,20 @@ const adminService = {
   },
   
   // Gestión de Usuarios
+  obtenerTodosUsuarios: async () => {
+    const res = await api.get('/usuarios');
+    return res.data;
+  },
   obtenerUsuariosSinEmpresa: async () => {
     const res = await api.get('/usuarios/sin-empresa');
     return res.data;
   },
   asignarEmpresaAUsuario: async (usuarioId, empresaId) => {
     const res = await api.post('/usuarios/asignar', { usuarioId, empresaId });
+    return res.data;
+  },
+  eliminarUsuario: async (id) => {
+    const res = await api.delete(`/usuarios/${id}`);
     return res.data;
   }
 };

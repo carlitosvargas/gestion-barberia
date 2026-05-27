@@ -40,4 +40,38 @@ const asignarEmpresa = async (req, res) => {
   }
 };
 
-module.exports = { obtenerUsuariosSinEmpresa, asignarEmpresa };
+const obtenerTodosUsuarios = async (req, res) => {
+  try {
+    const usuarios = await prisma.usuario.findMany({
+      select: { id: true, nombre: true, apellido: true, email: true, rol: true, empresaId: true, creadoEn: true }
+    });
+    res.json(usuarios);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener todos los usuarios', error: error.message });
+  }
+};
+
+const eliminarUsuario = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const usuarioIdInt = parseInt(id);
+    
+    // Evitar eliminar al SUPER_ADMIN principal (ej: el que tenga ID 1 o rol SUPER_ADMIN)
+    const usuario = await prisma.usuario.findUnique({ where: { id: usuarioIdInt } });
+    if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    
+    if (usuario.rol === 'SUPER_ADMIN') {
+      return res.status(403).json({ mensaje: 'No puedes eliminar a un administrador principal.' });
+    }
+
+    await prisma.usuario.delete({
+      where: { id: usuarioIdInt }
+    });
+    
+    res.json({ mensaje: 'Usuario eliminado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al eliminar usuario', error: error.message });
+  }
+};
+
+module.exports = { obtenerUsuariosSinEmpresa, asignarEmpresa, obtenerTodosUsuarios, eliminarUsuario };
