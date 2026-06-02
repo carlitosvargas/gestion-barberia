@@ -109,6 +109,7 @@ const solicitarRecuperacionPassword = async (req, res) => {
       id: usuario.id
     };
     // Usa el origen de la petición (ej: http://localhost:5173 o https://tu-dominio.vercel.app)
+    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
     const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
     const link = `${frontendUrl}/reset-password/${usuario.id}/${token}`;
 
