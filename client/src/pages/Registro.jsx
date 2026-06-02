@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import alerts from '../utils/alerts';
 
@@ -12,6 +13,8 @@ const Registro = () => {
     password: '',
     confirmarPassword: ''
   });
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] = useState(false);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
@@ -91,12 +94,30 @@ const Registro = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <label style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Contraseña</label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange} style={inputStyle} placeholder="Mínimo 6 caracteres" required />
+            <div style={{ position: 'relative' }}>
+              <input type={mostrarPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} placeholder="Mínimo 6 caracteres" required />
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {mostrarPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <label style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Confirmar Contraseña</label>
-            <input type="password" name="confirmarPassword" value={formData.confirmarPassword} onChange={handleChange} style={inputStyle} placeholder="Repite tu contraseña" required />
+            <div style={{ position: 'relative' }}>
+              <input type={mostrarConfirmarPassword ? "text" : "password"} name="confirmarPassword" value={formData.confirmarPassword} onChange={handleChange} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} placeholder="Repite tu contraseña" required />
+              <button
+                type="button"
+                onClick={() => setMostrarConfirmarPassword(!mostrarConfirmarPassword)}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {mostrarConfirmarPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }} disabled={cargando}>
