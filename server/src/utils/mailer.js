@@ -246,8 +246,54 @@ const enviarEmailBienvenida = async (emailDestino, nombre) => {
   }
 };
 
+// Enviar correo de Recuperación de Contraseña
+const enviarEmailRecuperacionPassword = async (emailDestino, nombre, linkRecuperacion) => {
+  if (!emailDestino) return;
+
+  try {
+    const mailClient = await obtenerTransporter();
+
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0f1113; color: #ffffff; padding: 2.5rem; max-width: 600px; margin: 0 auto; border-radius: 12px; border: 1px solid #c9a063;">
+        <div style="text-align: center; border-bottom: 2px solid #c9a063; padding-bottom: 1.5rem; margin-bottom: 2rem;">
+          <h1 style="color: #c9a063; margin: 0; font-size: 1.8rem; letter-spacing: 2px;">RECUPERACIÓN DE CONTRASEÑA</h1>
+          <p style="color: #a0a0a0; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Solicitud de restablecimiento</p>
+        </div>
+        
+        <p style="font-size: 1rem; line-height: 1.6; color: #e0e0e0;">Hola <strong>${nombre}</strong>,</p>
+        <p style="font-size: 1rem; line-height: 1.6; color: #e0e0e0;">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Si no fuiste tú, puedes ignorar este correo.</p>
+        
+        <p style="font-size: 0.9rem; color: #a0a0a0; line-height: 1.5; margin-top: 2rem; text-align: center;">
+          Para cambiar tu contraseña, haz clic en el siguiente botón. El enlace expirará en 1 hora.<br><br>
+          <a href="${linkRecuperacion}" style="display: inline-block; padding: 10px 20px; background-color: #c9a063; color: #000; text-decoration: none; border-radius: 8px; font-weight: bold;">Restablecer Contraseña</a>
+        </p>
+        
+        <div style="text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem; margin-top: 2.5rem; font-size: 0.8rem; color: #707070;">
+          <p>&copy; ${new Date().getFullYear()} Gestiones en línea CV. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    `;
+
+    const info = await mailClient.sendMail({
+      from: `"Gestiones CV" <no-reply@gestioneslineacv.com>`,
+      to: emailDestino,
+      subject: `🔐 Recuperación de Contraseña`,
+      html: htmlContent
+    });
+
+    console.log(`✉️ Correo de recuperación enviado a ${emailDestino}. ID: ${info.messageId}`);
+    
+    if (nodemailer.getTestMessageUrl(info)) {
+      console.log(`🔗 Ver correo de recuperación enviado: ${nodemailer.getTestMessageUrl(info)}`);
+    }
+  } catch (error) {
+    console.error(`❌ Error al enviar correo de recuperación a ${emailDestino}:`, error);
+  }
+};
+
 module.exports = {
   enviarEmailConfirmacion,
   enviarEmailCancelacion,
-  enviarEmailBienvenida
+  enviarEmailBienvenida,
+  enviarEmailRecuperacionPassword
 };

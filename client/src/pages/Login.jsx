@@ -65,7 +65,10 @@ const Login = () => {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ color: 'var(--text-muted)' }}>Contraseña</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ color: 'var(--text-muted)' }}>Contraseña</label>
+              <Link to="/recuperar-password" style={{ color: 'var(--primary)', fontSize: '0.8rem', textDecoration: 'none' }}>¿Olvidaste tu contraseña?</Link>
+            </div>
             <div style={{ position: 'relative' }}>
               <input
                 type={mostrarPassword ? "text" : "password"}

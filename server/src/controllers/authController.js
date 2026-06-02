@@ -89,4 +89,70 @@ const registro = async (req, res) => {
   }
 };
 
-module.exports = { login, registro };
+const { enviarEmailRecuperacionPassword } = require('../utils/mailer');
+
+const solicitarRecuperacionPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ mensaje: 'El email es requerido' });
+
+    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    if (!usuario) {
+      return res.status(404).json({ mensaje: 'No existe una cuenta con este correo' });
+    }
+
+    // El secreto combina la clave secreta general con la contraseña actual.
+    // Si la contraseña cambia, el token se invalida automáticamente.
+    const secret = process.env.JWT_SECRET + usuario.password;
+    const payload = {
+      email: usuario.email,
+      id: usuario.id
+    };
+    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://gestion-frontend-cv.vercel.app';
+    const link = `${frontendUrl}/reset-password/${usuario.id}/${token}`;
+
+    await enviarEmailRecuperacionPassword(usuario.email, usuario.nombre, link);
+
+    res.json({ mensaje: 'Se ha enviado el enlace de recuperación a tu correo.' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al solicitar recuperación', error: error.message });
+  }
+};
+
+const restablecerPassword = async (req, res) => {
+  try {
+    const { id, token } = req.params;
+    const { password } = req.body;
+
+    if (!password) return res.status(400).json({ mensaje: 'La nueva contraseña es requerida' });
+
+    const usuarioIdInt = parseInt(id);
+    const usuario = await prisma.usuario.findUnique({ where: { id: usuarioIdInt } });
+    
+    if (!usuario) {
+      return res.status(404).json({ mensaje: 'Usuario no válido' });
+    }
+
+    const secret = process.env.JWT_SECRET + usuario.password;
+    try {
+      jwt.verify(token, secret);
+    } catch (error) {
+      return res.status(400).json({ mensaje: 'El enlace es inválido o ha expirado' });
+    }
+
+    const passwordHasheada = await bcrypt.hash(password, 10);
+    
+    await prisma.usuario.update({
+      where: { id: usuarioIdInt },
+      data: { password: passwordHasheada }
+    });
+
+    res.json({ mensaje: 'Contraseña actualizada con éxito' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al restablecer contraseña', error: error.message });
+  }
+};
+
+module.exports = { login, registro, solicitarRecuperacionPassword, restablecerPassword };
