@@ -3,7 +3,7 @@ import api from './api';
 const adminService = {
   // Gestión de Empresas
   obtenerEmpresas: async () => {
-    const res = await api.get('/empresas');
+    const res = await api.get('/empresas/admin/todas');
     return res.data;
   },
   crearEmpresa: async (datos) => {
@@ -12,6 +12,10 @@ const adminService = {
   },
   eliminarEmpresa: async (id) => {
     const res = await api.delete(`/empresas/${id}`);
+    return res.data;
+  },
+  toggleEstadoEmpresa: async (id) => {
+    const res = await api.put(`/empresas/${id}/estado`);
     return res.data;
   },
   

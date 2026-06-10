@@ -202,7 +202,7 @@ const enviarEmailCancelacion = async (emailDestino, datosReserva) => {
 };
 
 // Enviar correo de Bienvenida al Dueño
-const enviarEmailBienvenida = async (emailDestino, nombre) => {
+const enviarEmailBienvenida = async (emailDestino, nombre, frontendUrl = 'http://localhost:5173') => {
   if (!emailDestino) return;
 
   try {
@@ -220,7 +220,7 @@ const enviarEmailBienvenida = async (emailDestino, nombre) => {
         
         <p style="font-size: 0.9rem; color: #a0a0a0; line-height: 1.5; margin-top: 2rem; text-align: center;">
           Una vez inicies sesión, podrás administrar tu sucursal, ver los turnos y servicios.<br><br>
-          <a href="https://gestion-frontend-cv.vercel.app/login" style="display: inline-block; padding: 10px 20px; background-color: #c9a063; color: #000; text-decoration: none; border-radius: 8px; font-weight: bold;">Acceder a mi panel</a>
+          <a href="${frontendUrl}/login" style="display: inline-block; padding: 10px 20px; background-color: #c9a063; color: #000; text-decoration: none; border-radius: 8px; font-weight: bold;">Acceder a mi panel</a>
         </p>
         
         <div style="text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem; margin-top: 2.5rem; font-size: 0.8rem; color: #707070;">
@@ -291,9 +291,71 @@ const enviarEmailRecuperacionPassword = async (emailDestino, nombre, linkRecuper
   }
 };
 
+// Enviar correo de Recordatorio (5 minutos antes)
+const enviarEmailRecordatorio = async (emailDestino, datosReserva) => {
+  if (!emailDestino) return;
+
+  try {
+    const mailClient = await obtenerTransporter();
+    const fechaAmigable = formatearFechaEmail(datosReserva.fecha);
+
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0f1113; color: #ffffff; padding: 2.5rem; max-width: 600px; margin: 0 auto; border-radius: 12px; border: 1px solid #c9a063;">
+        <div style="text-align: center; border-bottom: 2px solid #c9a063; padding-bottom: 1.5rem; margin-bottom: 2rem;">
+          <h1 style="color: #c9a063; margin: 0; font-size: 1.8rem; letter-spacing: 2px;">¡TU TURNO ESTÁ POR COMENZAR!</h1>
+          <p style="color: #a0a0a0; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Recordatorio Automático</p>
+        </div>
+        
+        <p style="font-size: 1rem; line-height: 1.6; color: #e0e0e0;">Hola <strong>${datosReserva.clienteNombre}</strong>,</p>
+        <p style="font-size: 1rem; line-height: 1.6; color: #e0e0e0;">Te recordamos que tienes un turno programado en <strong>${datosReserva.barberia}</strong> en aproximadamente 5 minutos.</p>
+        
+        <div style="background-color: rgba(201, 160, 99, 0.05); border-left: 4px solid #c9a063; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0;">
+          <h3 style="color: #c9a063; margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Detalles Rápidos</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; color: #ffffff;">
+            <tr>
+              <td style="padding: 0.4rem 0; color: #a0a0a0; width: 35%;">✂️ Servicio:</td>
+              <td style="padding: 0.4rem 0; font-weight: bold;">${datosReserva.servicioNombre}</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.4rem 0; color: #a0a0a0;">📅 Fecha y Hora:</td>
+              <td style="padding: 0.4rem 0; font-weight: bold; text-transform: capitalize;">${fechaAmigable}</td>
+            </tr>
+            ${datosReserva.barberiaDireccion ? `
+            <tr>
+              <td style="padding: 0.4rem 0; color: #a0a0a0;">📍 Dirección:</td>
+              <td style="padding: 0.4rem 0; font-weight: bold;">${datosReserva.barberiaDireccion}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+        
+        <p style="font-size: 0.9rem; color: #a0a0a0; line-height: 1.5; margin-top: 2rem; text-align: center;">
+          ¡Te esperamos!
+        </p>
+        
+        <div style="text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem; margin-top: 2.5rem; font-size: 0.8rem; color: #707070;">
+          <p>&copy; ${new Date().getFullYear()} ${datosReserva.barberia} - Gestiones en línea CV.</p>
+        </div>
+      </div>
+    `;
+
+    const info = await mailClient.sendMail({
+      from: `"${datosReserva.barberia}" <no-reply@gestioneslineacv.com>`,
+      to: emailDestino,
+      subject: `🔔 Recordatorio: Tu turno en ${datosReserva.barberia} es en 5 minutos`,
+      html: htmlContent
+    });
+
+    console.log(`✉️ Correo de recordatorio enviado a ${emailDestino}. ID: ${info.messageId}`);
+  } catch (error) {
+    console.error(`❌ Error al enviar recordatorio a ${emailDestino}:`, error);
+  }
+};
+
 module.exports = {
   enviarEmailConfirmacion,
   enviarEmailCancelacion,
   enviarEmailBienvenida,
-  enviarEmailRecuperacionPassword
+  enviarEmailRecuperacionPassword,
+  enviarEmailRecordatorio
 };

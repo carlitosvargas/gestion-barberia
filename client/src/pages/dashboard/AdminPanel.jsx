@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import adminService from '../../services/adminService';
 import { DashboardLayout, NavItem, modalStyles } from '../../components/dashboard/DashboardLayout';
-import { LayoutDashboard, Users, Building2, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Trash2, Eye, EyeOff } from 'lucide-react';
 import alerts from '../../utils/alerts';
 
 const AdminPanel = ({ usuario, logout, navigate }) => {
@@ -28,6 +28,16 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
       const dataTodosUsuarios = await adminService.obtenerTodosUsuarios();
       setTodosUsuarios(dataTodosUsuarios);
     } catch (err) { console.error(err); }
+  };
+
+  const handleToggleEstado = async (id) => {
+    try {
+      await adminService.toggleEstadoEmpresa(id);
+      alerts.toast('Estado de empresa actualizado', 'success');
+      cargarDatos();
+    } catch (err) {
+      alerts.error('Error', err.response?.data?.mensaje || 'No se pudo cambiar el estado de la empresa');
+    }
   };
 
   const handleCrearEmpresa = async (e) => {
@@ -131,10 +141,13 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
       {tabActiva === 'empresas' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
           {empresas.map(empresa => (
-            <div key={empresa.id} className="glass-card" style={{ padding: '1.5rem' }}>
+            <div key={empresa.id} className="glass-card" style={{ padding: '1.5rem', opacity: empresa.activa ? 1 : 0.6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <h3 style={{ color: 'var(--primary)' }}>{empresa.nombre}</h3>
-                <span style={{ fontSize: '0.7rem', background: 'var(--glass)', padding: '2px 8px', borderRadius: '4px' }}>Nº Empresa: {empresa.id}</span>
+                <h3 style={{ color: 'var(--primary)', textDecoration: !empresa.activa ? 'line-through' : 'none' }}>{empresa.nombre}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {!empresa.activa && <span style={{ fontSize: '0.7rem', color: '#ffb142', fontWeight: 'bold' }}>OCULTA</span>}
+                  <span style={{ fontSize: '0.7rem', background: 'var(--glass)', padding: '2px 8px', borderRadius: '4px' }}>Nº Empresa: {empresa.id}</span>
+                </div>
               </div>
               <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>📍 {empresa.direccion || 'Sin dirección'}</p>
               {empresa.dias && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>📅 {empresa.dias}</p>}
@@ -144,7 +157,14 @@ const AdminPanel = ({ usuario, logout, navigate }) => {
                   onClick={() => { setEmpresaSeleccionada(empresa); setMostrarModalAsignar(true); }}
                   style={{ flex: 1, padding: '0.6rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'black', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 >
-                  <Users size={16} /> Asignar Dueño
+                  <Users size={16} /> Asignar
+                </button>
+                <button
+                  onClick={() => handleToggleEstado(empresa.id)}
+                  style={{ padding: '0.6rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title={empresa.activa ? "Ocultar al público" : "Mostrar al público"}
+                >
+                  {empresa.activa ? <EyeOff size={16} /> : <Eye size={16} color="var(--primary)" />}
                 </button>
                 <button
                   onClick={() => handleEliminarEmpresa(empresa.id)}

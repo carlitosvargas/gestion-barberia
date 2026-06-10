@@ -20,10 +20,44 @@ const crearEmpresa = async (req, res) => {
 
 const obtenerEmpresas = async (req, res) => {
   try {
-    const empresas = await prisma.empresa.findMany();
+    const empresas = await prisma.empresa.findMany({
+      where: { activa: true }
+    });
     res.json(empresas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener empresas', error: error.message });
+  }
+};
+
+const obtenerEmpresasAdmin = async (req, res) => {
+  try {
+    const empresas = await prisma.empresa.findMany();
+    res.json(empresas);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener empresas para admin', error: error.message });
+  }
+};
+
+const toggleEstadoEmpresa = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const empresaIdInt = parseInt(id);
+    const empresaActual = await prisma.empresa.findUnique({
+      where: { id: empresaIdInt }
+    });
+
+    if (!empresaActual) {
+      return res.status(404).json({ mensaje: 'Empresa no encontrada' });
+    }
+
+    const empresaActualizada = await prisma.empresa.update({
+      where: { id: empresaIdInt },
+      data: { activa: !empresaActual.activa }
+    });
+
+    res.json(empresaActualizada);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al cambiar estado de la empresa', error: error.message });
   }
 };
 
@@ -114,4 +148,4 @@ const eliminarEmpresa = async (req, res) => {
   }
 };
 
-module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, actualizarEmpresa, eliminarEmpresa };
+module.exports = { crearEmpresa, obtenerEmpresas, obtenerEmpresasAdmin, obtenerEmpresaPorId, actualizarEmpresa, eliminarEmpresa, toggleEstadoEmpresa };

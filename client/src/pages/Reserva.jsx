@@ -355,7 +355,7 @@ export default function Reserva() {
           </button>
 
           <Link
-            to="/"
+            // to="/"
             style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', marginTop: '0.5rem', transition: 'color 0.2s' }}
             onMouseEnter={e => e.target.style.color = 'var(--primary)'}
             onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
@@ -372,9 +372,9 @@ export default function Reserva() {
     return (
       <div className="reserva-page">
         <header style={{ marginBottom: '3rem', position: 'relative' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {/*  <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
             <ArrowLeft size={16} /> Volver al Inicio
-          </Link>
+          </Link>*/}
           <h1 className="heading-gold" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>ENCUENTRA TU SUCURSAL</h1>
           <p style={{ color: 'var(--text-muted)' }}>Selecciona una de nuestros locales disponibles para agendar tu cita con los mejores profesionales.</p>
         </header>

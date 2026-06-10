@@ -51,6 +51,12 @@ const empresaService = {
   crearTurno: async (datos) => {
     const res = await api.post('/turnos', datos);
     return res.data;
+  },
+  
+  // Notificaciones (Polling)
+  verificarNotificaciones: async () => {
+    const res = await api.get('/notificaciones/turnos-proximos');
+    return res.data;
   }
 };
 

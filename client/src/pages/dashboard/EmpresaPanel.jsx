@@ -50,6 +50,44 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     cargarDatos();
   }, [seccion]);
 
+  // Polling de notificaciones (se ejecuta cada 30 segundos si el usuario tiene empresa)
+  useEffect(() => {
+    if (!usuario.empresaId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await empresaService.verificarNotificaciones();
+        if (data.nuevasNotificaciones && data.nuevasNotificaciones.length > 0) {
+          data.nuevasNotificaciones.forEach(turno => {
+            alerts.toast(`¡Atención! Turno de ${turno.cliente.nombre} en 5 minutos (${turno.servicio.nombre})`, 'warning');
+            
+            // Opcional: Reproducir un pequeño sonido nativo del navegador si es posible
+            try {
+              const context = new (window.AudioContext || window.webkitAudioContext)();
+              const oscillator = context.createOscillator();
+              const gainNode = context.createGain();
+              oscillator.connect(gainNode);
+              gainNode.connect(context.destination);
+              oscillator.type = 'sine';
+              oscillator.frequency.value = 800;
+              gainNode.gain.setValueAtTime(0, context.currentTime);
+              gainNode.gain.linearRampToValueAtTime(1, context.currentTime + 0.1);
+              gainNode.gain.linearRampToValueAtTime(0, context.currentTime + 0.5);
+              oscillator.start(context.currentTime);
+              oscillator.stop(context.currentTime + 0.5);
+            } catch (e) {
+              console.log('Audio no soportado o bloqueado');
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Error al verificar notificaciones', err);
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [usuario.empresaId]);
+
   // Al cargar miEmpresa, actualizar el formulario de configuración
   useEffect(() => {
     if (miEmpresa) {

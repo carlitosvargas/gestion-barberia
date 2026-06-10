@@ -74,8 +74,11 @@ const registro = async (req, res) => {
       }
     });
     
+    // Usa el origen de la petición
+    const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
+    
     // Enviar el correo de verificación / bienvenida
-    await enviarEmailBienvenida(usuario.email, usuario.nombre);
+    await enviarEmailBienvenida(usuario.email, usuario.nombre, frontendUrl);
 
     res.status(201).json({ 
       mensaje: 'Usuario creado con éxito. Se ha enviado un correo de verificación.', 

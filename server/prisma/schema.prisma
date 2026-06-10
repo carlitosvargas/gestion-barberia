@@ -22,6 +22,7 @@ model Empresa {
   telefono      String?
   dias          String?   // Ej: "Lunes a Viernes"
   horarios      String?   // Ej: "09:00 - 18:00"
+  activa        Boolean  @default(true) // Oculta o muestra la empresa al público
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
   usuarios      Usuario[]
@@ -74,5 +75,7 @@ model Turno {
   empresa     Empresa  @relation(fields: [empresaId], references: [id])
   fecha       DateTime
   estado      String   @default("PENDIENTE") // PENDIENTE, CONFIRMADO, CANCELADO, COMPLETADO
+  notificacionEnviada Boolean @default(false)
+  recordatorioEnviado Boolean @default(false)
   creadoEn    DateTime @default(now())
 }

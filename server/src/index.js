@@ -24,6 +24,7 @@ app.use('/api/usuarios', require('./routes/usuarioRoutes'));
 app.use('/api/servicios', require('./routes/servicioRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/turnos', require('./routes/turnoRoutes'));
+app.use('/api/notificaciones', require('./routes/notificacionRoutes'));
 
 app.get('/', (req, res) => {
   res.json({
