@@ -42,9 +42,8 @@ const crearPreferenciaTurno = async (req, res) => {
       });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'https://gestioncv.vercel.app';
     const backendUrl = process.env.BACKEND_URL;
-    const isHttps = frontendUrl.startsWith('https://');
 
     const preferenceBody = {
       items: [
@@ -71,11 +70,12 @@ const crearPreferenciaTurno = async (req, res) => {
         failure: `${frontendUrl}/pago/resultado?turnoId=${turno.id}&status=failure`,
         pending: `${frontendUrl}/pago/resultado?turnoId=${turno.id}&status=pending`
       },
-      ...(isHttps ? { auto_return: 'approved' } : {}),
+      auto_return: 'approved',
       notification_url: backendUrl && !backendUrl.includes('localhost') && !backendUrl.includes('tu-dominio')
         ? `${backendUrl}/api/pagos/webhook`
         : undefined
     };
+
 
     const preference = new Preference(client);
     const result = await preference.create({ body: preferenceBody });

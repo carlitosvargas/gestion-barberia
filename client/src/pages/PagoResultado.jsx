@@ -7,9 +7,10 @@ export default function PagoResultado() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const turnoId = searchParams.get('turnoId');
+  const turnoId = searchParams.get('turnoId') || searchParams.get('external_reference');
   const status = searchParams.get('status') || searchParams.get('collection_status');
-  const paymentId = searchParams.get('payment_id');
+  const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
+
 
   const [turno, setTurno] = useState(null);
   const [cargando, setCargando] = useState(true);
