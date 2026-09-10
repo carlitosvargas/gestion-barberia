@@ -506,12 +506,13 @@ export default function PagoResumen() {
               El servicio ya se encuentra totalmente abonado y agendado. Presenta este comprobante al momento de asistir a tu cita.
             </p>
             <Link
-              to="/"
+              to={turno?.empresa?.id ? `/reserva/${turno.empresa.id}` : turno?.empresaId ? `/reserva/${turno.empresaId}` : '/reserva/todas'}
               className="btn-primary"
-              style={{ textDecoration: 'none', marginTop: '1rem', display: 'inline-block' }}
+              style={{ textDecoration: 'none', marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              Volver al Inicio
+              <Scissors size={18} /> Volver a los Servicios
             </Link>
+
           </div>
         )}
 
