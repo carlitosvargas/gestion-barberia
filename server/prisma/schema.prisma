@@ -28,6 +28,7 @@ model Empresa {
   usuarios      Usuario[]
   servicios     Servicio[]
   turnos        Turno[]
+  pagos         Pago[]
 }
 
 model Usuario {
@@ -66,16 +67,34 @@ model Servicio {
 }
 
 model Turno {
-  id          Int      @id @default(autoincrement())
-  clienteId   Int
-  cliente     Cliente  @relation(fields: [clienteId], references: [id])
-  servicioId  Int
-  servicio    Servicio @relation(fields: [servicioId], references: [id])
-  empresaId   Int
-  empresa     Empresa  @relation(fields: [empresaId], references: [id])
-  fecha       DateTime
-  estado      String   @default("PENDIENTE") // PENDIENTE, CONFIRMADO, CANCELADO, COMPLETADO
-  notificacionEnviada Boolean @default(false)
-  recordatorioEnviado Boolean @default(false)
-  creadoEn    DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  clienteId           Int
+  cliente             Cliente  @relation(fields: [clienteId], references: [id])
+  servicioId          Int
+  servicio            Servicio @relation(fields: [servicioId], references: [id])
+  empresaId           Int
+  empresa             Empresa  @relation(fields: [empresaId], references: [id])
+  fecha               DateTime
+  estado              String   @default("PENDIENTE") // PENDIENTE, CONFIRMADO, CANCELADO, COMPLETADO
+  estadoPago          String   @default("PENDIENTE") // PENDIENTE, PAGADO
+  notificacionEnviada Boolean  @default(false)
+  recordatorioEnviado Boolean  @default(false)
+  pagos               Pago[]
+  creadoEn            DateTime @default(now())
+}
+
+model Pago {
+  id                Int      @id @default(autoincrement())
+  turnoId           Int
+  turno             Turno    @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  empresaId         Int
+  empresa           Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  monto             Float
+  estado            String   @default("PENDIENTE") // PENDIENTE, APROBADO, RECHAZADO
+  metodoPago        String?  // MERCADOPAGO, EFECTIVO, TRANSFERENCIA
+  mpPreferenceId    String?
+  mpPaymentId       String?
+  mpMerchantOrderId String?
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
 }

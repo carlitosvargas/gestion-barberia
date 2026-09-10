@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import empresaService from '../../services/empresaService';
+import pagoService from '../../services/pagoService';
+import { QRCodeSVG } from 'qrcode.react';
 import { DashboardLayout, NavItem, modalStyles } from '../../components/dashboard/DashboardLayout';
 import {
   Calendar, Scissors, Settings, Trash2, LayoutDashboard, Pencil, Save,
   Image as ImageIcon, Building2, Clock, Upload, ChevronLeft, ChevronRight,
-  Plus, Check, X, User, Phone, CheckCircle, BarChart3
+  Plus, Check, X, User, Phone, CheckCircle, BarChart3, QrCode, CreditCard,
+  DollarSign, Copy, ExternalLink, RefreshCw, CheckCircle2
 } from 'lucide-react';
 import alerts from '../../utils/alerts';
 import { optimizarImagen } from '../../utils/imageOptimizer';
@@ -45,6 +48,13 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
   });
 
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
+
+  // Modal y Gestión de Cobro / QR Mercado Pago
+  const [mostrarModalQR, setMostrarModalQR] = useState(false);
+  const [turnoParaQR, setTurnoParaQR] = useState(null);
+  const [preferenciaQR, setPreferenciaQR] = useState(null);
+  const [cargandoPreferenciaQR, setCargandoPreferenciaQR] = useState(false);
+  const [linkQRCopiado, setLinkQRCopiado] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -404,6 +414,37 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
     return Object.values(mapaClientes).sort((a, b) => b.total - a.total);
   };
 
+  const abrirModalCobroQR = async (turno) => {
+    setTurnoParaQR(turno);
+    setMostrarModalQR(true);
+    setCargandoPreferenciaQR(true);
+    setPreferenciaQR(null);
+    try {
+      const pref = await pagoService.crearPreferencia(turno.id);
+      setPreferenciaQR(pref);
+    } catch (err) {
+      console.error('Error al generar QR de cobro:', err);
+      alerts.toast('No se pudo generar el QR de Mercado Pago', 'error');
+    } finally {
+      setCargandoPreferenciaQR(false);
+    }
+  };
+
+  const handleMarcarPagadoDirecto = async (turnoId) => {
+    const confirm = await alerts.confirm('¿Registrar pago?', 'Confirmar que el cliente abonó el turno en efectivo.');
+    if (confirm.isConfirmed) {
+      try {
+        await pagoService.marcarPagoManual(turnoId, 'EFECTIVO');
+        alerts.success('¡Pago Registrado!', 'El turno se actualizó a PAGADO.');
+        setMostrarModalQR(false);
+        cargarDatos();
+      } catch (err) {
+        console.error(err);
+        alerts.error('Error', 'No se pudo registrar el pago.');
+      }
+    }
+  };
+
   // --- FIN LÓGICA DE TURNOS ---
 
   const sidebarItems = (
@@ -634,6 +675,21 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                               >
                                 {turnoEnSlot.estado}
                               </span>
+
+                              {/* Badge de Estado de Pago */}
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold',
+                                  background: turnoEnSlot.estadoPago === 'PAGADO' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(241, 196, 15, 0.15)',
+                                  color: turnoEnSlot.estadoPago === 'PAGADO' ? '#2ecc71' : '#f1c40f',
+                                  border: `1px solid ${turnoEnSlot.estadoPago === 'PAGADO' ? '#2ecc7144' : '#f1c40f44'}`
+                                }}
+                              >
+                                {turnoEnSlot.estadoPago === 'PAGADO' ? '✓ PAGADO' : 'PENDIENTE PAGO'}
+                              </span>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Scissors size={12} /> {turnoEnSlot.servicio.nombre} (${turnoEnSlot.servicio.precio})</span>
@@ -642,7 +698,28 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                           </div>
 
                           {/* Botones de acción del dueño */}
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {/* Botón Cobrar / QR */}
+                            <button
+                              onClick={() => abrirModalCobroQR(turnoEnSlot)}
+                              style={{
+                                background: turnoEnSlot.estadoPago === 'PAGADO' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(201, 160, 99, 0.15)',
+                                border: `1px solid ${turnoEnSlot.estadoPago === 'PAGADO' ? '#2ecc71' : 'var(--primary)'}`,
+                                color: turnoEnSlot.estadoPago === 'PAGADO' ? '#2ecc71' : 'var(--primary)',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                fontWeight: 'bold'
+                              }}
+                              title="Cobrar o Generar QR con Mercado Pago"
+                            >
+                              <QrCode size={13} /> {turnoEnSlot.estadoPago === 'PAGADO' ? 'Ver Cobro' : 'Cobrar / QR'}
+                            </button>
+
                             {turnoEnSlot.estado === 'PENDIENTE' && (
                               <>
                                 <button
@@ -1181,6 +1258,18 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                                 }}>
                                   {turno.estado}
                                 </span>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.2rem 0.6rem',
+                                  borderRadius: '12px',
+                                  color: turno.estadoPago === 'PAGADO' ? '#2ecc71' : '#f1c40f',
+                                  background: turno.estadoPago === 'PAGADO' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(241, 196, 15, 0.15)',
+                                  fontWeight: 'bold',
+                                  letterSpacing: '0.5px',
+                                  border: `1px solid ${turno.estadoPago === 'PAGADO' ? '#2ecc7144' : '#f1c40f44'}`
+                                }}>
+                                  {turno.estadoPago === 'PAGADO' ? '✓ PAGADO' : 'PENDIENTE PAGO'}
+                                </span>
                               </div>
 
                               <p style={{ fontSize: '0.9rem', color: 'var(--primary)', marginTop: '0.3rem', fontWeight: '500' }}>
@@ -1233,8 +1322,27 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                             </div>
                           </div>
 
-                          {/* ACCIONES DE ESTADO RÁPIDAS */}
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {/* ACCIONES DE ESTADO RÁPIDAS Y COBRO */}
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => abrirModalCobroQR(turno)}
+                              style={{
+                                background: turno.estadoPago === 'PAGADO' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(201, 160, 99, 0.15)',
+                                border: `1px solid ${turno.estadoPago === 'PAGADO' ? '#2ecc71' : 'var(--primary)'}`,
+                                color: turno.estadoPago === 'PAGADO' ? '#2ecc71' : 'var(--primary)',
+                                padding: '0.5rem 0.8rem',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                              }}
+                            >
+                              <QrCode size={14} /> {turno.estadoPago === 'PAGADO' ? 'Ver Cobro' : 'Cobrar / QR'}
+                            </button>
+
                             {turno.estado === 'PENDIENTE' && (
                               <>
                                 <button
@@ -1276,6 +1384,7 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                               </>
                             )}
                           </div>
+
 
                         </div>
                       );
@@ -1369,6 +1478,151 @@ const EmpresaPanel = ({ usuario, logout, navigate }) => {
                 <button type="submit" className="btn-primary" style={{ flex: 1 }}>Agendar Turno</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL COBRO / QR MERCADO PAGO */}
+      {mostrarModalQR && turnoParaQR && (
+        <div style={modalStyles.overlay}>
+          <div className="glass-card" style={{ ...modalStyles.content, maxWidth: '480px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.8rem' }}>
+              <h3 className="heading-gold" style={{ fontSize: '1.3rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <QrCode size={22} /> Cobro de Turno #{turnoParaQR.id}
+              </h3>
+              <button
+                onClick={() => setMostrarModalQR(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Resumen rápido */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '1rem', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem' }}>
+              <div>👤 <strong>Cliente:</strong> {turnoParaQR.cliente?.nombre} {turnoParaQR.cliente?.apellido}</div>
+              <div>✂️ <strong>Servicio:</strong> {turnoParaQR.servicio?.nombre}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--primary)', marginTop: '0.3rem' }}>
+                💵 Monto: ${turnoParaQR.servicio?.precio} ARS
+              </div>
+              <div style={{ fontSize: '0.8rem', color: turnoParaQR.estadoPago === 'PAGADO' ? '#2ecc71' : '#f1c40f', fontWeight: 'bold' }}>
+                Estado: {turnoParaQR.estadoPago === 'PAGADO' ? '✓ PAGADO' : '⏳ PENDIENTE DE PAGO'}
+              </div>
+            </div>
+
+            {/* Código QR */}
+            {cargandoPreferenciaQR ? (
+              <div style={{ padding: '2.5rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem' }}>
+                <RefreshCw size={36} className="spin" color="var(--primary)" />
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generando código QR de Mercado Pago...</p>
+              </div>
+            ) : preferenciaQR?.init_point ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Pide al cliente que escanee el código con su app de <strong>Mercado Pago</strong> o cámara:
+                </p>
+
+                <div style={{
+                  padding: '1.2rem',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  display: 'inline-flex'
+                }}>
+                  <QRCodeSVG
+                    value={preferenciaQR.init_point}
+                    size={200}
+                    level="H"
+                    includeMargin={false}
+                  />
+                </div>
+
+                {/* Acciones de enlace */}
+                <div style={{ display: 'flex', gap: '0.6rem', width: '100%' }}>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(preferenciaQR.init_point);
+                      setLinkQRCopiado(true);
+                      alerts.toast('Enlace copiado al portapapeles', 'success');
+                      setTimeout(() => setLinkQRCopiado(false), 2500);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.6rem',
+                      background: 'var(--glass)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      color: 'white',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    {linkQRCopiado ? <Check size={14} color="#2ecc71" /> : <Copy size={14} />}
+                    {linkQRCopiado ? '¡Copiado!' : 'Copiar Link'}
+                  </button>
+
+                  <a
+                    href={`/pago/turno/${turnoParaQR.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1,
+                      padding: '0.6rem',
+                      background: 'rgba(201, 160, 99, 0.15)',
+                      border: '1px solid var(--primary)',
+                      borderRadius: '8px',
+                      color: 'var(--primary)',
+                      fontSize: '0.8rem',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    <ExternalLink size={14} /> Abrir Resumen
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                No se pudo cargar el link de Mercado Pago. Puedes cobrar manualmente o reintentar.
+              </div>
+            )}
+
+            {/* Acciones para el dueño */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+              {turnoParaQR.estadoPago !== 'PAGADO' && (
+                <button
+                  onClick={() => handleMarcarPagadoDirecto(turnoParaQR.id)}
+                  className="btn-primary"
+                  style={{
+                    padding: '0.75rem',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <DollarSign size={18} /> Marcar Pagado en Efectivo
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setMostrarModalQR(false)}
+                style={modalStyles.btnSec}
+              >
+                Cerrar
+              </button>
+            </div>
+
           </div>
         </div>
       )}

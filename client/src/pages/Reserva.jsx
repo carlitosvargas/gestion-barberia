@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import publicService from '../services/publicService';
 import {
   Calendar, MapPin, Phone, Clock, ArrowLeft, Scissors, Building2,
-  ChevronRight, ChevronLeft, Check, CheckCircle, User, AlertCircle
+  ChevronRight, ChevronLeft, Check, CheckCircle, User, AlertCircle, CreditCard
 } from 'lucide-react';
 import alerts from '../utils/alerts';
 
@@ -167,6 +167,7 @@ export default function Reserva() {
       const res = await publicService.crearTurno(datos);
 
       setDetalleReservaCreada({
+        id: res.id,
         fecha: fechaTurno,
         barberia: empresaSeleccionada.nombre,
         servicio: servicioSeleccionado.nombre,
@@ -311,6 +312,27 @@ export default function Reserva() {
             {detalleReservaCreada.direccion && <p style={{ fontSize: '0.95rem' }}>📍 <strong>Dirección:</strong> {detalleReservaCreada.direccion}</p>}
           </div>
 
+          {detalleReservaCreada.id && (
+            <Link
+              to={`/pago/turno/${detalleReservaCreada.id}`}
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.9rem',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.6rem',
+                fontSize: '1rem',
+                boxShadow: '0 4px 15px rgba(201,160,99,0.4)'
+              }}
+            >
+              <CreditCard size={20} /> Pagar Servicio / Ver Resumen de Pago
+            </Link>
+          )}
+
           <a
             href={`https://wa.me/${empresaSeleccionada?.telefono?.replace(/[^0-9]/g, '') || ''}?text=${encodeURIComponent(
               `¡Hola! Confirmo mi turno en *${detalleReservaCreada.barberia}*:\n\n` +
@@ -348,14 +370,25 @@ export default function Reserva() {
 
           <button
             onClick={handleReservarOtroServicio}
-            className="btn-primary"
-            style={{ width: '100%', padding: '0.8rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: '1px solid var(--glass-border)',
+              color: 'white',
+              borderRadius: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
           >
             Reservar otro servicio en esta sucursal
           </button>
 
           <Link
-            // to="/"
+            to="/"
             style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', marginTop: '0.5rem', transition: 'color 0.2s' }}
             onMouseEnter={e => e.target.style.color = 'var(--primary)'}
             onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}

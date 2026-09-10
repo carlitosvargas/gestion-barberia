@@ -6,9 +6,23 @@ const path = require('path');
 
 const app = express();
 
+const allowedOrigins = [
+  'https://gestioncv.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 // Middlewares
 app.use(cors({
-  origin: 'https://gestioncv.vercel.app',
+  origin: (origin, callback) => {
+    // Permitir solicitudes sin origen (como apps móviles, Postman o Webhooks de Mercado Pago)
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permite acceso para testing fluido
+    }
+  },
   credentials: true
 }));
 
@@ -25,6 +39,7 @@ app.use('/api/servicios', require('./routes/servicioRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/turnos', require('./routes/turnoRoutes'));
 app.use('/api/notificaciones', require('./routes/notificacionRoutes'));
+app.use('/api/pagos', require('./routes/pagoRoutes'));
 
 app.get('/', (req, res) => {
   res.json({
@@ -32,5 +47,13 @@ app.get('/', (req, res) => {
     mensaje: 'API Barbería funcionando'
   });
 });
+
+const PORT = process.env.PORT || 3001;
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor de Barbería corriendo en puerto ${PORT}`);
+  });
+}
+
 
 module.exports = app;
