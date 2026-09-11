@@ -386,7 +386,7 @@ export default function Reserva() {
           >
             Reservar otro servicio en esta sucursal
           </button>
-
+          {/* 
           <Link
             to="/"
             style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', marginTop: '0.5rem', transition: 'color 0.2s' }}
@@ -395,6 +395,7 @@ export default function Reserva() {
           >
             Volver al Inicio
           </Link>
+          */}
         </div>
       </div>
     );
