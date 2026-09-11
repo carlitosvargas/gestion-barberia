@@ -44,7 +44,7 @@ export default function PagoResultado() {
   const fechaTurno = turno?.fecha ? new Date(turno.fecha) : null;
   const horaStr = fechaTurno ? `${String(fechaTurno.getHours()).padStart(2, '0')}:${String(fechaTurno.getMinutes()).padStart(2, '0')}` : '';
   const rutaServicios = turno?.empresa?.id ? `/reserva/${turno.empresa.id}` : turno?.empresaId ? `/reserva/${turno.empresaId}` : '/reserva/todas';
-  const rutaTodosServicios = '/reserva/todas';
+
   return (
     <div className="reserva-page" style={{ padding: '5rem 1.5rem', maxWidth: '620px', margin: '0 auto', textAlign: 'center' }}>
       <div className="glass-card" style={{
@@ -191,7 +191,7 @@ export default function PagoResultado() {
         </Link>
 
         {/*  
-         Link Volver al Inicio */}
+         Link Volver al Inicio 
         <Link
           to={rutaTodosServicios}
           style={{
@@ -206,7 +206,7 @@ export default function PagoResultado() {
         >
           Volver al Inicio
         </Link>
-
+*/}
       </div>
     </div>
   );
