@@ -44,7 +44,7 @@ export default function PagoResultado() {
   const fechaTurno = turno?.fecha ? new Date(turno.fecha) : null;
   const horaStr = fechaTurno ? `${String(fechaTurno.getHours()).padStart(2, '0')}:${String(fechaTurno.getMinutes()).padStart(2, '0')}` : '';
   const rutaServicios = turno?.empresa?.id ? `/reserva/${turno.empresa.id}` : turno?.empresaId ? `/reserva/${turno.empresaId}` : '/reserva/todas';
-
+  const rutaTodosServicios = '/reserva/todas';
   return (
     <div className="reserva-page" style={{ padding: '5rem 1.5rem', maxWidth: '620px', margin: '0 auto', textAlign: 'center' }}>
       <div className="glass-card" style={{
@@ -55,7 +55,7 @@ export default function PagoResultado() {
         alignItems: 'center',
         gap: '1.8rem'
       }}>
-        
+
         {/* Icono de Estado */}
         {esExito && (
           <CheckCircle size={75} color="var(--primary)" style={{ filter: 'drop-shadow(0 0 12px rgba(201,160,99,0.5))' }} />
@@ -75,8 +75,8 @@ export default function PagoResultado() {
             {esExito
               ? 'Tu reserva y tu pago con Mercado Pago se han registrado con éxito.'
               : esPendiente
-              ? 'Tu reserva está agendada. El pago se encuentra en proceso de acreditación.'
-              : 'El turno está reservado pero el pago no se completó. Puedes abonarlo en el local.'}
+                ? 'Tu reserva está agendada. El pago se encuentra en proceso de acreditación.'
+                : 'El turno está reservado pero el pago no se completó. Puedes abonarlo en el local.'}
           </p>
         </div>
 
@@ -190,9 +190,10 @@ export default function PagoResultado() {
           <Scissors size={18} /> Reservar otro servicio en esta sucursal
         </Link>
 
-        {/* Link Volver al Inicio */}
+        {/*  
+         Link Volver al Inicio */}
         <Link
-          to="/"
+          to={rutaTodosServicios}
           style={{
             color: 'var(--text-muted)',
             fontSize: '0.9rem',
